@@ -1,14 +1,10 @@
 # Dyson Swarm
 
-A markdown-based issue tracking system that provides a simple, human-readable way to manage tasks and issues directly in your Git repository.
+A markdown-based issue tracking system that provides a simple, human-readable way to manage tasks and issues.
 
 ## Overview
 
-Dyson Swarm stores issues as markdown files with YAML frontmatter, making them:
-- **Human-readable** - Every issue is a plain markdown file you can read and edit
-- **Git-trackable** - All changes are tracked in your repository history
-- **CLI-friendly** - Designed to be used both programmatically and via command-line tools
-- **No external dependencies** - Works entirely with local files
+Dyson Swarm stores issues as markdown files with YAML frontmatter, making them human readable and git-trackable.
 
 ## Quick Start
 
@@ -135,76 +131,9 @@ const unassigned = await taskManager.unassignTask(task.id);
 const deleted = await taskManager.deleteTask(task.id);
 ```
 
-### Task Status Flow
+## CLI Tool
 
-Tasks flow through three statuses:
-
-1. **`open`** - New tasks, not yet assigned
-2. **`in-progress`** - Tasks with an assignee actively working on them
-3. **`closed`** - Completed or resolved tasks
-
-Status changes happen automatically:
-- Assigning a task moves it from `open` → `in-progress`
-- Unassigning a task moves it from `in-progress` → `open`
-- Manual status changes are also available
-
-## Advanced Usage
-
-### Custom Working Directory
-
-```javascript
-const customTaskManager = new TaskManager({
-  cwdProvider: () => '/path/to/project'
-});
-```
-
-### Direct File Access
-
-```javascript
-import { TaskFileUtils } from 'dyson-swarm';
-
-// Parse a task file manually
-const { frontmatter, description } = TaskFileUtils.parseTaskFile('.dyson/tasks/open/task-id/task-id.task');
-
-// Generate task ID
-const taskId = TaskFileUtils.generateTaskId();
-```
-
-### Path Utilities
-
-```javascript
-import { getTasksDir, getTaskFile } from 'dyson-swarm';
-
-const tasksDir = getTasksDir(); // '.dyson/tasks'
-const taskFile = getTaskFile('task-id', 'open'); // '.dyson/tasks/open/task-id/task-id.task'
-```
-
-## CLI Tool (Coming Soon)
-
-A command-line interface is planned that will provide commands like:
-
-```bash
-dyson create "Fix login bug" "Users cannot log in"
-dyson list --status open
-dyson assign task-id john.doe
-dyson close task-id
-```
-
-## Design Goals
-
-1. **Markdown-based** - All issues stored as human-readable markdown files
-2. **Library-first** - Primary interaction through the JavaScript API
-3. **CLI-compatible** - Designed to support command-line tools
-4. **Git-native** - Leverages Git for change tracking and collaboration
-5. **No database** - File-based storage that works anywhere
-
-## Why Use This Over GitHub/GitLab Issues?
-
-- **Offline-friendly** - Works without internet connection
-- **Privacy-focused** - Your issues stay in your repository
-- **Customizable** - Extend and modify as needed
-- **Integrated** - Issues live alongside your code
-- **Portable** - Move repos between platforms without losing issues
+(Coming soon)
 
 ## License
 
