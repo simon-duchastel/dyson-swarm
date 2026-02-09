@@ -1,25 +1,50 @@
 {
   "name": "dyson-swarm",
   "version": "1.0.0",
-  "description": "A markdown-based issue tracking system",
+  "description": "A markdown-based issue tracking system with JavaScript API",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "module": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/simon-duchastel/dyson-swarm.git"
+  },
+  "homepage": "https://github.com/simon-duchastel/dyson-swarm#readme",
+  "bugs": {
+    "url": "https://github.com/simon-duchastel/dyson-swarm/issues"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
     "test": "vitest --run",
     "test:watch": "vitest --watch",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "issue-tracker",
     "markdown",
     "tasks",
     "git",
-    "cli"
+    "cli",
+    "task-management",
+    "project-management",
+    "yaml",
+    "frontmatter"
   ],
-  "author": "",
+  "author": "Simon Duchastel",
   "license": "MIT",
   "dependencies": {
     "proper-lockfile": "^4.1.2",
