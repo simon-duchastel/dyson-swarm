@@ -1,30 +1,196 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { promises as fs } from 'fs';
-import { join } from 'path';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { TaskManager } from '../manager.js';
 import { TaskFileUtils } from '../file-utils.js';
-import { getTasksDir, getTaskLockFile } from '../../paths.js';
+
+// Mock filesystem
+interface MockFileSystem {
+  files: Map<string, string>;
+  directories: Set<string>;
+  stats: Map<string, { isDirectory: () => boolean }>;
+}
+
+const mockFS: MockFileSystem = {
+  files: new Map(),
+  directories: new Set(),
+  stats: new Map()
+};
+
+let mockUUIDCounter = 1;
+const mockUUIDs = [
+  '11111111-1111-4111-8111-111111111111',
+  '22222222-2222-4222-8222-222222222222',
+  '33333333-3333-4333-8333-333333333333',
+  '44444444-4444-4444-8444-444444444444',
+  '55555555-5555-4555-8555-555555555555'
+];
+
+// Mock fs module
+vi.mock('fs', () => ({
+  promises: {
+    readFile: vi.fn((path: string) => {
+      const content = mockFS.files.get(path.toString());
+      if (content === undefined) {
+        throw new Error(`ENOENT: no such file or directory, open '${path}'`);
+      }
+      return Promise.resolve(content);
+    }),
+    writeFile: vi.fn((path: string, content: string) => {
+      mockFS.files.set(path.toString(), content);
+      const dirPath = path.toString().split('/').slice(0, -1).join('/');
+      mockFS.directories.add(dirPath);
+      return Promise.resolve();
+    }),
+    mkdir: vi.fn((path: string) => {
+      mockFS.directories.add(path.toString());
+      // Also add all parent directories
+      const parts = path.toString().split('/');
+      for (let i = 1; i <= parts.length; i++) {
+        const parentPath = parts.slice(0, i).join('/');
+        if (parentPath) {
+          mockFS.directories.add(parentPath);
+        }
+      }
+      return Promise.resolve();
+    }),
+    access: vi.fn((path: string) => {
+      const exists = mockFS.files.has(path.toString()) || mockFS.directories.has(path.toString());
+      if (!exists) {
+        throw new Error(`ENOENT: no such file or directory, access '${path}'`);
+      }
+      return Promise.resolve();
+    }),
+    stat: vi.fn((path: string) => {
+      const isDir = mockFS.directories.has(path.toString());
+      const isFile = mockFS.files.has(path.toString());
+      if (!isDir && !isFile) {
+        throw new Error(`ENOENT: no such file or directory, stat '${path}'`);
+      }
+      return Promise.resolve({
+        isDirectory: () => isDir
+      });
+    }),
+    readdir: vi.fn((path: string) => {
+      const entries: Array<{ name: string; isFile: () => boolean; isDirectory: () => boolean }> = [];
+      
+      // Add files in this directory
+      for (const filePath of mockFS.files.keys()) {
+        const pathParts = filePath.split('/');
+        if (pathParts.length >= 2) {
+          const dirPart = pathParts.slice(0, -1).join('/');
+          if (dirPart === path.toString()) {
+            const fileName = pathParts[pathParts.length - 1];
+            entries.push({
+              name: fileName,
+              isFile: () => true,
+              isDirectory: () => false
+            });
+          }
+        }
+      }
+      
+      // Add subdirectories
+      for (const dirPath of mockFS.directories) {
+        const pathParts = dirPath.split('/');
+        if (pathParts.length >= 2) {
+          const parentDir = pathParts.slice(0, -1).join('/');
+          if (parentDir === path.toString()) {
+            const dirName = pathParts[pathParts.length - 1];
+            if (!entries.find(e => e.name === dirName)) {
+              entries.push({
+                name: dirName,
+                isFile: () => false,
+                isDirectory: () => true
+              });
+            }
+          }
+        }
+      }
+      
+      return Promise.resolve(entries);
+    }),
+    rename: vi.fn((oldPath: string, newPath: string) => {
+      // Move files
+      for (const [filePath, content] of mockFS.files) {
+        if (filePath.startsWith(oldPath.toString())) {
+          const newFilePath = filePath.replace(oldPath.toString(), newPath.toString());
+          mockFS.files.set(newFilePath, content);
+          mockFS.files.delete(filePath);
+        }
+      }
+      
+      // Move directories
+      for (const dirPath of mockFS.directories) {
+        if (dirPath.startsWith(oldPath.toString())) {
+          const newDirPath = dirPath.replace(oldPath.toString(), newPath.toString());
+          mockFS.directories.add(newDirPath);
+          mockFS.directories.delete(dirPath);
+        }
+      }
+      
+      return Promise.resolve();
+    }),
+    rm: vi.fn((path: string) => {
+      // Remove files
+      for (const filePath of mockFS.files.keys()) {
+        if (filePath.startsWith(path.toString())) {
+          mockFS.files.delete(filePath);
+        }
+      }
+      
+      // Remove directories
+      for (const dirPath of mockFS.directories) {
+        if (dirPath.startsWith(path.toString())) {
+          mockFS.directories.delete(dirPath);
+        }
+      }
+      
+      return Promise.resolve();
+    })
+  }
+}));
+
+// Mock proper-lockfile
+vi.mock('proper-lockfile', () => ({
+  default: {
+    lock: vi.fn(() => Promise.resolve(() => Promise.resolve()))
+  }
+}));
+
+// Mock uuid
+vi.mock('uuid', () => ({
+  v4: vi.fn(() => {
+    const uuid = mockUUIDs[(mockUUIDCounter - 1) % mockUUIDs.length];
+    mockUUIDCounter++;
+    return uuid;
+  })
+}));
+
+// Mock path functions
+vi.mock('node:path', () => ({
+  join: vi.fn((...args: string[]) => args.join('/')),
+  resolve: vi.fn((...args: string[]) => args.join('/'))
+}));
 
 describe('TaskManager', () => {
   let taskManager: TaskManager;
-  let testDir: string;
+  let testCwd: string;
 
-  beforeEach(async () => {
-    // Create a temporary directory for testing
-    testDir = `/tmp/dyson-test-${Date.now()}`;
+  beforeEach(() => {
+    // Reset mock filesystem
+    mockFS.files.clear();
+    mockFS.directories.clear();
+    mockFS.stats.clear();
+    mockUUIDCounter = 1;
+    
+    // Clear all vi.fn mocks
+    vi.clearAllMocks();
+    
+    testCwd = '/test/workspace';
     taskManager = new TaskManager({
-      cwdProvider: () => testDir,
+      cwdProvider: () => testCwd,
     });
   });
 
-  afterEach(async () => {
-    // Clean up test directory
-    try {
-      await fs.rm(testDir, { recursive: true, force: true });
-    } catch {
-      // Ignore cleanup errors
-    }
-  });
 
   describe('createTask', () => {
     it('should create an open task', async () => {
