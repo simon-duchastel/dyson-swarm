@@ -191,10 +191,6 @@ describe('TaskManager', () => {
     });
   });
 
-  afterEach(() => {
-    // Verify our mocks are being used properly
-    // All operations should be through our mocked filesystem
-  });
 
   describe('createTask', () => {
     it('should create an open task', async () => {
