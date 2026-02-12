@@ -23,16 +23,19 @@ jobs:
         run: npm ci
 
       - name: Type check library
-        run: npx tsc --noEmit
+        run: npm run build --workspace=lib -- --noEmit
 
       - name: Type check CLI
-        run: npx tsc --noEmit -p cli/tsconfig.json
+        run: npm run build --workspace=cli -- --noEmit
 
-      - name: Run tests
-        run: npm test
+      - name: Run library tests
+        run: npm run test --workspace=lib
+
+      - name: Run CLI tests
+        run: npm run test --workspace=cli
 
       - name: Build library
-        run: npm run build
+        run: npm run build --workspace=lib
 
       - name: Build CLI
-        run: npm run build:cli
+        run: npm run build --workspace=cli

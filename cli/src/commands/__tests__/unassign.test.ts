@@ -4,7 +4,7 @@ import { unassignAction } from '../unassign.js';
 // Mock the TaskManager
 const mockUnassignTask = vi.fn();
 
-vi.mock('../../../../lib/dist/index.js', () => ({
+vi.mock("dyson-swarm", () => ({
   TaskManager: vi.fn().mockImplementation(() => ({
     unassignTask: mockUnassignTask,
   })),

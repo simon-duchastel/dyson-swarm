@@ -4,7 +4,7 @@ import { listAction } from '../list.js';
 // Mock the TaskManager
 const mockListTasks = vi.fn();
 
-vi.mock('../../../../lib/dist/index.js', () => ({
+vi.mock("dyson-swarm", () => ({
   TaskManager: vi.fn().mockImplementation(() => ({
     listTasks: mockListTasks,
   })),

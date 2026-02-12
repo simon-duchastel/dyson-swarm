@@ -4,7 +4,7 @@ import { assignAction } from '../assign.js';
 // Mock the TaskManager
 const mockAssignTask = vi.fn();
 
-vi.mock('../../../../lib/dist/index.js', () => ({
+vi.mock("dyson-swarm", () => ({
   TaskManager: vi.fn().mockImplementation(() => ({
     assignTask: mockAssignTask,
   })),

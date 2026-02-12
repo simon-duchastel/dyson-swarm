@@ -1,0 +1,34 @@
+{
+  "name": "dyson-cli",
+  "version": "1.0.0",
+  "description": "CLI for the dyson-swarm issue tracking system",
+  "type": "module",
+  "bin": {
+    "dyson": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "test": "vitest --run",
+    "test:watch": "vitest --watch"
+  },
+  "keywords": [
+    "issue-tracker",
+    "markdown",
+    "tasks",
+    "git",
+    "cli"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^12.0.0",
+    "dyson-swarm": "file:../lib"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.6.1"
+  }
+}

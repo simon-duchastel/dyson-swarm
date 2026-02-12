@@ -4,7 +4,7 @@ import { deleteAction } from '../delete.js';
 // Mock the TaskManager
 const mockDeleteTask = vi.fn();
 
-vi.mock('../../../../lib/dist/index.js', () => ({
+vi.mock("dyson-swarm", () => ({
   TaskManager: vi.fn().mockImplementation(() => ({
     deleteTask: mockDeleteTask,
   })),

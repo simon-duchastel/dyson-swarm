@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { TaskManager } from '../../../lib/dist/index.js';
+import { TaskManager } from "dyson-swarm";
 
 // Export the action handler for testing
 export async function assignAction(taskId: string, assignee: string): Promise<void> {

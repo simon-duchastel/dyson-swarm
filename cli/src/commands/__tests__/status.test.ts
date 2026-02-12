@@ -4,7 +4,7 @@ import { statusAction } from '../status.js';
 // Mock the TaskManager
 const mockChangeTaskStatus = vi.fn();
 
-vi.mock('../../../../lib/dist/index.js', () => ({
+vi.mock("dyson-swarm", () => ({
   TaskManager: vi.fn().mockImplementation(() => ({
     changeTaskStatus: mockChangeTaskStatus,
   })),

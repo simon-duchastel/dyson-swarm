@@ -1,21 +1,21 @@
 {
-  "name": "dyson-swarm",
+  "name": "dyson-swarm-monorepo",
   "version": "1.0.0",
-  "description": "A markdown-based issue tracking system",
-  "type": "module",
-  "main": "lib/dist/index.js",
-  "types": "lib/dist/index.d.ts",
-  "bin": {
-    "dyson": "cli/dist/index.js"
-  },
+  "description": "Monorepo for dyson-swarm issue tracking system",
+  "private": true,
+  "workspaces": [
+    "lib",
+    "cli"
+  ],
   "scripts": {
-    "build": "tsc",
-    "build:cli": "tsc -p cli/tsconfig.json",
-    "dev": "tsx lib/src/index.ts",
-    "dev:cli": "tsx cli/src/index.ts",
-    "test": "vitest --run",
-    "test:watch": "vitest --watch",
-    "test:coverage": "vitest --coverage"
+    "build": "npm run build --workspace=lib && npm run build --workspace=cli",
+    "build:lib": "npm run build --workspace=lib",
+    "build:cli": "npm run build --workspace=cli",
+    "test": "npm run test --workspace=lib && npm run test --workspace=cli",
+    "test:lib": "npm run test --workspace=lib",
+    "test:cli": "npm run test --workspace=cli",
+    "dev:lib": "npm run dev --workspace=lib",
+    "dev:cli": "npm run dev --workspace=cli"
   },
   "keywords": [
     "issue-tracker",
@@ -26,11 +26,6 @@
   ],
   "author": "",
   "license": "MIT",
-  "dependencies": {
-    "commander": "^12.1.0",
-    "proper-lockfile": "^4.1.2",
-    "uuid": "^13.0.0"
-  },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/proper-lockfile": "^4.1.4",
