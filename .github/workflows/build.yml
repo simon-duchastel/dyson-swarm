@@ -22,11 +22,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Type check
+      - name: Type check library
         run: npx tsc --noEmit
+
+      - name: Type check CLI
+        run: npx tsc --noEmit -p cli/tsconfig.json
 
       - name: Run tests
         run: npm test
 
-      - name: Build
+      - name: Build library
         run: npm run build
+
+      - name: Build CLI
+        run: npm run build:cli
