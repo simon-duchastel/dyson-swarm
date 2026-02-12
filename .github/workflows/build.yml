@@ -25,17 +25,17 @@ jobs:
       - name: Type check library
         run: npm run build --workspace=lib -- --noEmit
 
-      - name: Type check CLI
-        run: npm run build --workspace=cli -- --noEmit
-
       - name: Run library tests
         run: npm run test --workspace=lib
 
-      - name: Run CLI tests
-        run: npm run test --workspace=cli
-
       - name: Build library
         run: npm run build --workspace=lib
+
+      - name: Type check CLI
+        run: npm run build --workspace=cli -- --noEmit
+
+      - name: Run CLI tests
+        run: npm run test --workspace=cli
 
       - name: Build CLI
         run: npm run build --workspace=cli

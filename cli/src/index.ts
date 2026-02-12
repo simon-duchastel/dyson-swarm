@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { TaskManager } from '../../lib/dist/index.js';
+import { TaskManager } from 'dyson-swarm';
 import { createCommand } from './commands/create.js';
 import { listCommand } from './commands/list.js';
 import { getCommand } from './commands/get.js';
