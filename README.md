@@ -37,10 +37,10 @@ const retrieved = await taskManager.getTask(task.id);
 
 ## Storage Structure
 
-Tasks are organized by status in the `.dyson/tasks/` directory:
+Tasks are organized by status in the `.swarm/tasks/` directory:
 
 ```
-.dyson/tasks/
+.swarm/tasks/
 ├── open/
 │   └── {taskId}/
 │       └── {taskId}.task

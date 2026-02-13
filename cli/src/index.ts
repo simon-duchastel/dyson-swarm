@@ -14,7 +14,7 @@ import { deleteCommand } from './commands/delete.js';
 const program = new Command();
 
 program
-  .name('dyson')
+  .name('swarm')
   .description('A markdown-based issue tracking system CLI')
   .version('1.0.0');
 
