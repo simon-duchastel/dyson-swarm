@@ -1,5 +1,5 @@
 {
-  "name": "swarm-cli",
+  "name": "dyson-swarm-cli",
   "version": "1.0.0",
   "description": "CLI for the dyson-swarm issue tracking system",
   "type": "module",
