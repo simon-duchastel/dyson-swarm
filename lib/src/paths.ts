@@ -4,7 +4,7 @@ import { join, resolve } from "node:path";
  * Base directory for dyson configuration and state (per-directory)
  */
 export function getDysonDir(cwdProvider: () => string = () => process.cwd()): string {
-  return join(resolve(cwdProvider()), '.dyson');
+  return join(resolve(cwdProvider()), '.swarm');
 }
 
 /**

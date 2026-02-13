@@ -67,5 +67,5 @@ logs
 *.log
 
 # Task storage directories
-.dyson/
-!.dyson/.gitkeep
+.swarm/
+!.swarm/.gitkeep
