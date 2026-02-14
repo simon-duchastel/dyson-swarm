@@ -1,11 +1,14 @@
 {
   "name": "dyson-swarm-cli",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "CLI for the dyson-swarm issue tracking system",
   "type": "module",
   "bin": {
     "swarm": "dist/index.js"
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
@@ -26,7 +29,7 @@
     "@cliffy/flags": "npm:@jsr/cliffy__flags@^1.0.0",
     "@cliffy/table": "npm:@jsr/cliffy__table@^1.0.0",
     "cliffy": "^2.5.1",
-    "dyson-swarm": "file:../lib"
+    "dyson-swarm": "^0.1.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
