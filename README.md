@@ -32,7 +32,7 @@ await tm.changeTaskStatus(task.id, 'closed');
 
 ## CLI
 
-After installation, use the `swarm` command:
+After installation, use the `swarm` command (if `dyson-swarm-cli` was installed):
 
 ```bash
 # Create a task
