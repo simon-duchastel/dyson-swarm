@@ -35,11 +35,10 @@ export function generateHelp(command: any): string {
         const desc = opt.description || "";
         cmdRows.push([`    ${flags}`, desc]);
       }
-    
+     
       cmdRows.push(["", ""]);
       cmdRows.pop();
     }
-   
     lines.push(Table.from(cmdRows).padding(1).toString());
   }
   
