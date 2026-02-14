@@ -12,8 +12,6 @@ import { assignCommand } from "./commands/assign.js";
 import { unassignCommand } from "./commands/unassign.js";
 import { deleteCommand } from "./commands/delete.js";
 
-const allCommands = [createCommand, listCommand, getCommand, updateCommand, statusCommand, assignCommand, unassignCommand, deleteCommand];
-
 await new Command()
   .help(function() {
     const lines: string[] = [];
@@ -26,6 +24,7 @@ await new Command()
     lines.push("Commands:");
     const cmdRows: string[][] = [];
     
+    const allCommands = this.getCommands();
     for (const cmd of allCommands) {
       const name = cmd.getName();
       const args = cmd.getArguments()
@@ -38,10 +37,12 @@ await new Command()
       const arguments_ = cmd.getArguments();
       for (const arg of arguments_) {
         const argStr = (arg as any).optional ? `[${arg.name}]` : `<${arg.name}>`;
-        const requiredText = (arg as any).optional ? " (optional)" : " (required)";
-        cmdRows.push([`    ${argStr}`.padEnd(28), (arg.description || "") + requiredText]);
+        const description = (arg as any).description ? ` ${arg.description}` : "";
+        const requiredText = (arg as any).optional ? "(optional)" : "(required)";
+        cmdRows.push([`    ${argStr}`.padEnd(28), requiredText + (description || "")]);
       }
-      
+
+
       // Add options
       const opts = cmd.getOptions();
       for (const opt of opts) {
@@ -61,6 +62,9 @@ await new Command()
     return lines.join("\n");
   })
   .name("swarm")
+  .action(function () {
+    this.showHelp();
+  })
   .description("A markdown-based issue tracking system CLI")
   .version("1.0.0")
   .command("create", createCommand)

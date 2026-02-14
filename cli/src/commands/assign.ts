@@ -4,7 +4,8 @@ import { TaskManager } from "dyson-swarm";
 export const assignCommand: any = new Command()
   .name("assign")
   .description("assign a task to someone")
-  .arguments("<taskId> <assignee>")
+  .argument("<taskId>", "The id of the task to add an assignee to")
+  .argument("<assignee>", "The assignee to assign the task to")
   .action(async (_options: any, taskId: string, assignee: string) => {
     const taskManager = new TaskManager();
 
