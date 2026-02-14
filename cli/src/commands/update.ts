@@ -54,7 +54,7 @@ export async function updateAction(taskId: string, options: {
 
 // Export the command for the CLI
 export const updateCommand = new Command('update')
-  .description('Update a task')
+  .description('update a task')
   .argument('<taskId>', 'Task ID')
   .option('-t, --title <title>', 'New title')
   .option('-d, --description <description>', 'New description')

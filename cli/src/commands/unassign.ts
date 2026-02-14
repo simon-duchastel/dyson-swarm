@@ -24,6 +24,6 @@ export async function unassignAction(taskId: string): Promise<void> {
 
 // Export the command for the CLI
 export const unassignCommand = new Command('unassign')
-  .description('Unassign a task')
+  .description('unassign a task')
   .argument('<taskId>', 'Task ID')
   .action(unassignAction);

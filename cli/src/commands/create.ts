@@ -40,7 +40,7 @@ export async function createAction(options: {
 
 // Export the command for the CLI
 export const createCommand = new Command('create')
-  .description('Create a new task')
+  .description('create a new task')
   .requiredOption('-t, --title <title>', 'Task title')
   .requiredOption('-d, --description <description>', 'Task description')
   .option('-a, --assignee <assignee>', 'Assignee username')

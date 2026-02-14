@@ -31,7 +31,7 @@ export async function deleteAction(taskId: string, options: {
 
 // Export the command for the CLI
 export const deleteCommand = new Command('delete')
-  .description('Delete a task')
+  .description('delete a task')
   .argument('<taskId>', 'Task ID')
   .option('-f, --force', 'Force deletion without confirmation')
   .action(deleteAction);

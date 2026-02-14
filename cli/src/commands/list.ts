@@ -61,7 +61,7 @@ export async function listAction(options: {
 
 // Export the command for the CLI
 export const listCommand = new Command('list')
-  .description('List tasks with optional filters')
+  .description('list tasks with optional filters')
   .option('-s, --status <status>', 'Filter by status (open, in-progress, closed)')
   .option('-a, --assignee <assignee>', 'Filter by assignee')
   .option('--has-subtasks', 'Filter tasks that have subtasks')

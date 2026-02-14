@@ -39,6 +39,6 @@ export async function getAction(taskId: string): Promise<void> {
 
 // Export the command for the CLI
 export const getCommand = new Command('get')
-  .description('Get a specific task by ID')
+  .description('get a specific task by ID')
   .argument('<taskId>', 'Task ID')
   .action(getAction);

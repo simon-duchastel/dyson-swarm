@@ -24,7 +24,7 @@ export async function assignAction(taskId: string, assignee: string): Promise<vo
 
 // Export the command for the CLI
 export const assignCommand = new Command('assign')
-  .description('Assign a task to someone')
+  .description('assign a task to someone')
   .argument('<taskId>', 'Task ID')
   .argument('<assignee>', 'Assignee username')
   .action(assignAction);

@@ -28,7 +28,7 @@ export async function statusAction(taskId: string, status: string): Promise<void
 
 // Export the command for the CLI
 export const statusCommand = new Command('status')
-  .description('Change the status of a task')
+  .description('change the status of a task')
   .argument('<taskId>', 'Task ID')
   .argument('<status>', 'New status (open, in-progress, closed)')
   .action(statusAction);
