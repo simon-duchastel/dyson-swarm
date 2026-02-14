@@ -12,38 +12,39 @@ import { assignCommand } from "./commands/assign.js";
 import { unassignCommand } from "./commands/unassign.js";
 import { deleteCommand } from "./commands/delete.js";
 
-function buildHelp(cmd: any): string {
-  const sections: string[] = [];
-  
-  sections.push("Commands:");
-  const cmdRows: string[][] = [];
-  
-  const addCommands = (command: any, indent = "") => {
-    for (const sub of [createCommand, listCommand, getCommand, updateCommand, statusCommand, assignCommand, unassignCommand, deleteCommand]) {
-      const name = sub.getName();
-      const args = sub.getArguments()
+const allCommands = [createCommand, listCommand, getCommand, updateCommand, statusCommand, assignCommand, unassignCommand, deleteCommand];
+
+await new Command()
+  .help(function() {
+    const lines: string[] = [];
+    
+    lines.push(`Usage: ${this.getName()} [options] [command]`);
+    lines.push("");
+    lines.push(this.getDescription());
+    lines.push("");
+    
+    lines.push("Commands:");
+    const cmdRows: string[][] = [];
+    
+    for (const cmd of allCommands) {
+      const name = cmd.getName();
+      const args = cmd.getArguments()
         .map((arg: any) => arg.optional ? `[${arg.name}]` : `<${arg.name}>`)
         .join(" ");
       
-      cmdRows.push([`${indent}${name} ${args}`, sub.getDescription()]);
+      cmdRows.push([`${name} ${args}`, cmd.getDescription()]);
       
-      const opts = sub.getOptions();
-      if (opts.length > 0) {
-        for (const opt of opts) {
-          const optFlags = Array.isArray(opt.flags) ? opt.flags.join(", ") : (opt.flags || "");
-          cmdRows.push([`  ${optFlags}`, opt.description || ""]);
-        }
+      const opts = cmd.getOptions();
+      for (const opt of opts) {
+        const flags = Array.isArray(opt.flags) ? opt.flags.join(", ") : (opt.flags || "");
+        cmdRows.push([`  ${flags}`, opt.description || ""]);
       }
     }
-  };
-  
-  addCommands(cmd);
-  sections.push(Table.from(cmdRows).padding(1).toString());
-  
-  return sections.join("\n");
-}
-
-await new Command()
+    
+    lines.push(Table.from(cmdRows).padding(1).toString());
+    
+    return lines.join("\n");
+  })
   .name("swarm")
   .description("A markdown-based issue tracking system CLI")
   .version("1.0.0")
@@ -55,9 +56,4 @@ await new Command()
   .command("assign", assignCommand)
   .command("unassign", unassignCommand)
   .command("delete", deleteCommand)
-  .help(() => {
-    let helpText = "test"; //cmd.getHelp();
-    helpText += "\n\nSUBCOMMAND OPTIONS:\n";
-    return buildHelp("foo");
-  })
   .parse();
