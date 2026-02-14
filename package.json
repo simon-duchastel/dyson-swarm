@@ -33,8 +33,5 @@
     "tsx": "^4.0.0",
     "typescript": "^5.0.0",
     "vitest": "^1.6.1"
-  },
-  "dependencies": {
-    "cliffy": "^2.5.1"
   }
 }
