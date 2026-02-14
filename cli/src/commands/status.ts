@@ -4,7 +4,8 @@ import { TaskManager } from "dyson-swarm";
 export const statusCommand: any = new Command()
   .name("status")
   .description("change the status of a task")
-  .arguments("<taskId> <status>")
+  .argument("<taskId>", "The id of the task to update")
+  .argument("<status>", "The new status (open, in-progress, or closed)")
   .action(async (_options: any, taskId: string, status: string) => {
     const taskManager = new TaskManager();
 

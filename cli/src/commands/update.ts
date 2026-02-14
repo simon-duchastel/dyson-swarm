@@ -4,7 +4,7 @@ import { TaskManager } from "dyson-swarm";
 export const updateCommand: any = new Command()
   .name("update")
   .description("update a task")
-  .arguments("<taskId>")
+  .argument("<taskId>", "The id of the task to update")
   .option("-t, --title <title>", "New title")
   .option("-d, --description <description>", "New description")
   .option("-a, --assignee <assignee>", "New assignee")

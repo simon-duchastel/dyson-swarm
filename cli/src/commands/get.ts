@@ -4,7 +4,7 @@ import { TaskManager } from "dyson-swarm";
 export const getCommand: any = new Command()
   .name("get")
   .description("get a specific task by ID")
-  .arguments("<taskId>")
+  .argument("<taskId>", "The id of the task to get")
   .action(async (_options: any, taskId: string) => {
     const taskManager = new TaskManager();
 
