@@ -6,6 +6,7 @@ A markdown-based issue tracking system that provides a simple, human-readable wa
 
 ```bash
 npm install dyson-swarm
+npm install -g dyson-swarm-cli # optionally install the CLI
 ```
 
 ## Quick Start
@@ -72,7 +73,7 @@ swarm delete <taskId>
 | `unassign <taskId>` | Unassign a task |
 | `delete <taskId>` | Delete a task |
 
-**Filter flags:** `-s, --status`, `-a, --assignee`, `--has-subtasks`, `--no-subtasks`
+Run `swarm --help` for comprehensive help dialog
 
 ## API
 
