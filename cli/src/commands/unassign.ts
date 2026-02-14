@@ -1,8 +1,7 @@
-import { Command } from 'commander';
+import { Command } from "@cliffy/command";
 import { TaskManager } from "dyson-swarm";
 
-// Export the action handler for testing
-export async function unassignAction(taskId: string): Promise<void> {
+export async function unassignAction(taskId: string) {
   const taskManager = new TaskManager();
 
   try {
@@ -17,13 +16,13 @@ export async function unassignAction(taskId: string): Promise<void> {
     console.log(`Title: ${task.frontmatter.title}`);
     console.log(`Status: ${task.status}`);
   } catch (error) {
-    console.error('Failed to unassign task:', error instanceof Error ? error.message : error);
+    console.error("Failed to unassign task:", error instanceof Error ? error.message : error);
     process.exit(1);
   }
 }
 
-// Export the command for the CLI
-export const unassignCommand = new Command('unassign')
-  .description('Unassign a task')
-  .argument('<taskId>', 'Task ID')
-  .action(unassignAction);
+export const unassignCommand: any = new Command()
+  .name("unassign")
+  .description("Unassign a task.")
+  .argument("<taskId>", "The id of the task to unassign.")
+  .action(async (_options: any, taskId: string) => unassignAction(taskId));

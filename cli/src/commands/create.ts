@@ -1,18 +1,11 @@
-import { Command } from 'commander';
+import { Command } from "@cliffy/command";
 import { TaskManager } from "dyson-swarm";
 
-// Export the action handler for testing
-export async function createAction(options: {
-  title: string;
-  description: string;
-  assignee?: string;
-  subtasks?: string[];
-}): Promise<void> {
+export async function createAction(options: any) {
   const taskManager = new TaskManager();
-  
   const subtasks = options.subtasks?.map((title: string) => ({
     title,
-    description: '',
+    description: "",
   }));
 
   try {
@@ -33,16 +26,15 @@ export async function createAction(options: {
       console.log(`Subtasks: ${task.subtasks.length}`);
     }
   } catch (error) {
-    console.error('Failed to create task:', error instanceof Error ? error.message : error);
+    console.error("Failed to create task:", error instanceof Error ? error.message : error);
     process.exit(1);
   }
 }
 
-// Export the command for the CLI
-export const createCommand = new Command('create')
-  .description('Create a new task')
-  .requiredOption('-t, --title <title>', 'Task title')
-  .requiredOption('-d, --description <description>', 'Task description')
-  .option('-a, --assignee <assignee>', 'Assignee username')
-  .option('-s, --subtasks <subtasks...>', 'Subtask titles (can be specified multiple times)')
+export const createCommand: any = new Command()
+  .description("Create a new task.")
+  .option("-t, --title <title>", "Task title.", { required: true })
+  .option("-d, --description <description>", "Task description.", { required: true })
+  .option("-a, --assignee <assignee>", "Assignee username.")
+  .option("-s, --subtasks <subtasks...>", "Subtask titles, can be specified multiple times.")
   .action(createAction);

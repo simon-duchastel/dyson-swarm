@@ -1,8 +1,7 @@
-import { Command } from 'commander';
+import { Command } from "@cliffy/command";
 import { TaskManager } from "dyson-swarm";
 
-// Export the action handler for testing
-export async function getAction(taskId: string): Promise<void> {
+export async function getAction(taskId: string) {
   const taskManager = new TaskManager();
 
   try {
@@ -32,13 +31,13 @@ export async function getAction(taskId: string): Promise<void> {
       }
     }
   } catch (error) {
-    console.error('Failed to get task:', error instanceof Error ? error.message : error);
+    console.error("Failed to get task:", error instanceof Error ? error.message : error);
     process.exit(1);
   }
 }
 
-// Export the command for the CLI
-export const getCommand = new Command('get')
-  .description('Get a specific task by ID')
-  .argument('<taskId>', 'Task ID')
-  .action(getAction);
+export const getCommand: any = new Command()
+  .name("get")
+  .description("Get a specific task by ID.")
+  .argument("<taskId>", "The id of the task to get.")
+  .action(async (_options: any, taskId: string) => getAction(taskId));

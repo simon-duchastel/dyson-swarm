@@ -1,35 +1,18 @@
-import { Command } from 'commander';
+import { Command } from "@cliffy/command";
 import { TaskManager } from "dyson-swarm";
 
-// Export the action handler for testing
-export async function updateAction(taskId: string, options: {
-  title?: string;
-  description?: string;
-  assignee?: string;
-}): Promise<void> {
+export async function updateAction(taskId: string, options: any) {
   const taskManager = new TaskManager();
 
   try {
-    const updateOptions: {
-      title?: string;
-      description?: string;
-      assignee?: string;
-    } = {};
+    const updateOptions: any = {};
 
-    if (options.title) {
-      updateOptions.title = options.title;
-    }
-
-    if (options.description) {
-      updateOptions.description = options.description;
-    }
-
-    if (options.assignee) {
-      updateOptions.assignee = options.assignee;
-    }
+    if (options.title) updateOptions.title = options.title;
+    if (options.description) updateOptions.description = options.description;
+    if (options.assignee) updateOptions.assignee = options.assignee;
 
     if (Object.keys(updateOptions).length === 0) {
-      console.error('No updates specified. Use --title, --description, or --assignee.');
+      console.error("No updates specified. Use --title, --description, or --assignee.");
       process.exit(1);
     }
 
@@ -47,16 +30,16 @@ export async function updateAction(taskId: string, options: {
       console.log(`Assignee: ${task.frontmatter.assignee}`);
     }
   } catch (error) {
-    console.error('Failed to update task:', error instanceof Error ? error.message : error);
+    console.error("Failed to update task:", error instanceof Error ? error.message : error);
     process.exit(1);
   }
 }
 
-// Export the command for the CLI
-export const updateCommand = new Command('update')
-  .description('Update a task')
-  .argument('<taskId>', 'Task ID')
-  .option('-t, --title <title>', 'New title')
-  .option('-d, --description <description>', 'New description')
-  .option('-a, --assignee <assignee>', 'New assignee')
-  .action(updateAction);
+export const updateCommand: any = new Command()
+  .name("update")
+  .description("Update a task.")
+  .argument("<taskId>", "The id of the task to update.")
+  .option("-t, --title <title>", "New title.")
+  .option("-d, --description <description>", "New description.")
+  .option("-a, --assignee <assignee>", "New assignee.")
+  .action(async (options: any, taskId: string) => updateAction(taskId, options));
