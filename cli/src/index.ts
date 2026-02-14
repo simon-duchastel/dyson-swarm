@@ -32,14 +32,29 @@ await new Command()
         .map((arg: any) => arg.optional ? `[${arg.name}]` : `<${arg.name}>`)
         .join(" ");
       
-      cmdRows.push([`${name} ${args}`, cmd.getDescription()]);
+      cmdRows.push([`  ${name} ${args}`.padEnd(28), cmd.getDescription()]);
       
+      // Add arguments
+      const arguments_ = cmd.getArguments();
+      for (const arg of arguments_) {
+        const argStr = (arg as any).optional ? `[${arg.name}]` : `<${arg.name}>`;
+        const requiredText = (arg as any).optional ? " (optional)" : " (required)";
+        cmdRows.push([`    ${argStr}`.padEnd(28), (arg.description || "") + requiredText]);
+      }
+      
+      // Add options
       const opts = cmd.getOptions();
       for (const opt of opts) {
         const flags = Array.isArray(opt.flags) ? opt.flags.join(", ") : (opt.flags || "");
-        cmdRows.push([`  ${flags}`, opt.description || ""]);
+        cmdRows.push([`    ${flags}`.padEnd(28), opt.description || ""]);
       }
+      
+      // Add empty row for spacing
+      cmdRows.push(["", ""]);
     }
+    
+    // Remove last empty row
+    cmdRows.pop();
     
     lines.push(Table.from(cmdRows).padding(1).toString());
     
