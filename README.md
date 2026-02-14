@@ -1,6 +1,6 @@
 # Dyson Swarm
 
-A markdown-based issue tracking system that stores issues as human-readable git-trackable files.
+A markdown-based issue tracking system that provides a simple, human-readable way to manage tasks and issues.
 
 ## Installation
 
