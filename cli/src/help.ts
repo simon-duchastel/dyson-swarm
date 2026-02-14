@@ -37,9 +37,9 @@ export function generateHelp(command: any): string {
       }
     
       cmdRows.push(["", ""]);
+      cmdRows.pop();
     }
-  
-    cmdRows.pop();
+   
     lines.push(Table.from(cmdRows).padding(1).toString());
   }
   
