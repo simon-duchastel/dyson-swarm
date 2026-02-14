@@ -3,8 +3,8 @@ import { TaskManager } from "dyson-swarm";
 
 export const unassignCommand: any = new Command()
   .name("unassign")
-  .description("unassign a task")
-  .argument("<taskId>", "The id of the task to unassign")
+  .description("Unassign a task.")
+  .argument("<taskId>", "The id of the task to unassign.")
   .action(async (_options: any, taskId: string) => {
     const taskManager = new TaskManager();
 

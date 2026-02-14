@@ -38,7 +38,7 @@ await new Command()
       for (const arg of arguments_) {
         const argStr = (arg as any).optional ? `[${arg.name}]` : `<${arg.name}>`;
         const description = (arg as any).description ? ` ${arg.description}` : "";
-        const requiredText = (arg as any).optional ? "(optional)" : "(required)";
+        const requiredText = (arg as any).optional ? "(Optional)" : "(Required)";
         cmdRows.push([`    ${argStr}`.padEnd(28), requiredText + (description || "")]);
       }
 
@@ -47,7 +47,8 @@ await new Command()
       const opts = cmd.getOptions();
       for (const opt of opts) {
         const flags = Array.isArray(opt.flags) ? opt.flags.join(", ") : (opt.flags || "");
-        cmdRows.push([`    ${flags}`.padEnd(28), opt.description || ""]);
+        const desc = opt.description || "";
+        cmdRows.push([`    ${flags}`.padEnd(28), desc]);
       }
       
       // Add empty row for spacing

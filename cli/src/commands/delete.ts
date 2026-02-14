@@ -3,9 +3,9 @@ import { TaskManager } from "dyson-swarm";
 
 export const deleteCommand: any = new Command()
   .name("delete")
-  .description("delete a task")
-  .argument("<taskId>", "The id of the task to delete")
-  .option("-f, --force", "Force deletion without confirmation")
+  .description("Delete a task.")
+  .argument("<taskId>", "The id of the task to delete.")
+  .option("-f, --force", "Force deletion without confirmation.")
   .action(async (options: any, taskId: string) => {
     const taskManager = new TaskManager();
 

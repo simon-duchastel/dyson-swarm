@@ -2,11 +2,11 @@ import { Command } from "@cliffy/command";
 import { TaskManager } from "dyson-swarm";
 
 export const listCommand: any = new Command()
-  .description("list tasks with optional filters")
-  .option("-s, --status <status>", "Filter by status (open, in-progress, closed)")
-  .option("-a, --assignee <assignee>", "Filter by assignee")
-  .option("--has-subtasks", "Filter tasks that have subtasks")
-  .option("--no-subtasks", "Filter tasks that have no subtasks")
+  .description("List tasks with optional filters.")
+  .option("-s, --status <status>", "Filter by status (open, in-progress, closed).")
+  .option("-a, --assignee <assignee>", "Filter by assignee.")
+  .option("--has-subtasks", "Filter tasks that have subtasks.")
+  .option("--no-subtasks", "Filter tasks that have no subtasks.")
   .action(async (options: any) => {
     const taskManager = new TaskManager();
 
