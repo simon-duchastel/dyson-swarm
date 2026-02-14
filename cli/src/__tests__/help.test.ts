@@ -27,6 +27,7 @@ Commands:
   create <title> [description] Create a task              
     <title>                    (Required)                 
     [description]              (Optional) Task description
+                                                            
   list                         List tasks                 
     -s, --status               Filter by status           `;
 
