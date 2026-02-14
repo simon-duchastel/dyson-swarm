@@ -1,6 +1,6 @@
 {
   "name": "dyson-swarm-monorepo",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Monorepo for dyson-swarm issue tracking system",
   "private": true,
   "workspaces": [
@@ -33,8 +33,5 @@
     "tsx": "^4.0.0",
     "typescript": "^5.0.0",
     "vitest": "^1.6.1"
-  },
-  "dependencies": {
-    "cliffy": "^2.5.1"
   }
 }
