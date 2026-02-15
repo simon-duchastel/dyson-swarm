@@ -5,8 +5,6 @@
  * The version file is stored at `.swarm/version` and tracks the current
  * schema version to enable future migrations.
  * 
- * Current Version: 1
- * 
  * Each schema version has its own folder in schema-version/{version}/ containing:
  * - README.md: Documentation of that version's structure and format
  * - migrate.ts: Migration script to upgrade from the previous version
