@@ -4,6 +4,7 @@ import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import type { Task, TaskStatus, CreateTaskOptions, UpdateTaskOptions, TaskFilter, TaskManagerOptions } from './types.js';
 import { TaskFileUtils } from './file-utils.js';
+import { ensureSchemaVersion } from './schema-version.js';
 import {
   getTasksDir,
   getTaskLockFile,
@@ -25,6 +26,9 @@ export class TaskManager {
    */
   private async withLock<T>(operation: () => Promise<T>): Promise<T> {
     const lockfilePath = getTaskLockFile(this.cwdProvider);
+    
+    // Ensure schema version is up to date
+    await ensureSchemaVersion(this.cwdProvider);
     
     // Ensure tasks directory exists
     await TaskFileUtils.ensureDir(getTasksDir(this.cwdProvider));
