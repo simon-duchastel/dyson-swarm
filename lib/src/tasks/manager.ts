@@ -4,7 +4,7 @@ import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import type { Task, TaskStatus, CreateTaskOptions, UpdateTaskOptions, TaskFilter, TaskManagerOptions } from './types.js';
 import { TaskFileUtils } from './file-utils.js';
-import { ensureSchemaVersion } from './schema-version.js';
+import { ensureSchemaVersion } from './schema-version/index.js';
 import {
   getTasksDir,
   getTaskLockFile,

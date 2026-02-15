@@ -9,7 +9,7 @@ import {
   ensureSchemaVersion,
   migrateToLatest,
   isSchemaCompatible,
-} from '../schema-version.js';
+} from '../index.js';
 
 // Mock filesystem
 interface MockFileSystem {
@@ -83,7 +83,7 @@ vi.mock('node:path', () => ({
 }));
 
 // Mock paths module
-vi.mock('../../paths.js', () => ({
+vi.mock('../../../paths.js', () => ({
   getDysonDir: vi.fn((cwdProvider?: () => string) => {
     const cwd = cwdProvider ? cwdProvider() : '/test';
     return `${cwd}/.swarm`;

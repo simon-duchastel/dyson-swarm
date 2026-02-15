@@ -1,4 +1,4 @@
 export * from './types.js';
 export * from './manager.js';
 export * from './file-utils.js';
-export * from './schema-version.js';
+export * from './schema-version/index.js';

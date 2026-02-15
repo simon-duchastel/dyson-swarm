@@ -1,78 +1,22 @@
 /**
  * Schema Version Management
- * =========================
  * 
- * This file manages the schema version for the .swarm directory structure.
+ * This module manages the schema version for the .swarm directory structure.
  * The version file is stored at `.swarm/version` and tracks the current
  * schema version to enable future migrations.
  * 
  * Current Version: 1
  * 
- * Schema Versions Explainer
- * -------------------------
+ * Each schema version has its own folder in schema-version/{version}/ containing:
+ * - README.md: Documentation of that version's structure and format
+ * - migrate.ts: Migration script to upgrade from the previous version
  * 
- * ### Version 1 (Initial)
- * Directory structure:
- *   .swarm/
- *   └── tasks/
- *       ├── lockfile
- *       ├── open/
- *       │   └── {task-id}/
- *       │       ├── {task-id}.task
- *       │       └── sub-tasks/
- *       │           └── open/
- *       │               └── {subtask-id}.task
- *       ├── in-progress/
- *       │   └── {task-id}/
- *       │       ├── {task-id}.task
- *       │       └── sub-tasks/
- *       │           └── in-progress/
- *       │               └── {subtask-id}.task
- *       └── closed/
- *           └── {task-id}/
- *               ├── {task-id}.task
- *               └── sub-tasks/
- *                   └── closed/
- *                       └── {subtask-id}.task
- * 
- * Task file format (YAML frontmatter + markdown):
- *   ---
- *   title: "Task Title"
- *   assignee: "username"  # Optional
- *   ---
- *   Task description goes here...
- * 
- * 
- * Migration Guide
- * ---------------
- * When adding a new schema version:
- * 
- * 1. Update CURRENT_SCHEMA_VERSION constant below
- * 2. Add migration logic in migrateToLatest() function
- * 3. Document the changes in this header comment
- * 4. Update the "Current Version" in the header above
- * 
- * Example migration pattern:
- *   if (currentVersion < 2) {
- *     // Perform migration from v1 to v2
- *     // - Rename files
- *     // - Restructure directories
- *     // - Transform data formats
- *   }
- *   if (currentVersion < 3) {
- *     // Perform migration from v2 to v3
- *   }
- * 
- * Migration Best Practices:
- * - Always make migrations idempotent (safe to run multiple times)
- * - Create backups before destructive operations
- * - Validate the migration succeeded before updating version
- * - Log all migration steps for debugging
+ * @see schema-version/1/README.md for the initial version documentation
  */
 
 import { promises as fs } from 'fs';
-import { getDysonDir } from '../paths.js';
-import { TaskFileUtils } from './file-utils.js';
+import { getDysonDir } from '../../paths.js';
+import { TaskFileUtils } from '../file-utils.js';
 
 /**
  * Current schema version
@@ -130,22 +74,36 @@ export async function initializeSchemaVersion(cwdProvider?: () => string): Promi
 }
 
 /**
+ * Import migration module for a specific version
+ */
+async function importMigration(version: number): Promise<{ migrate: (cwdProvider?: () => string) => Promise<void> } | null> {
+  try {
+    // Dynamic import of migration module
+    const migrationModule = await import(`./${version}/migrate.js`);
+    return migrationModule;
+  } catch {
+    // Migration module doesn't exist for this version
+    return null;
+  }
+}
+
+/**
  * Migrate from an older schema version to the latest
- * Add migration logic here when introducing new schema versions
+ * Imports and runs migration scripts from schema-version/{version}/migrate.ts
  */
 export async function migrateToLatest(
   currentVersion: number,
   cwdProvider?: () => string
 ): Promise<void> {
-  // No migrations needed for version 1 (initial version)
-  // Add migration steps here for future versions:
-  //
-  // if (currentVersion < 2) {
-  //   await migrateV1ToV2(cwdProvider);
-  // }
-  // if (currentVersion < 3) {
-  //   await migrateV2ToV3(cwdProvider);
-  // }
+  // Run migrations sequentially from currentVersion to CURRENT_SCHEMA_VERSION
+  for (let version = currentVersion + 1; version <= CURRENT_SCHEMA_VERSION; version++) {
+    const migration = await importMigration(version);
+    
+    if (migration) {
+      await migration.migrate(cwdProvider);
+    }
+    // If no migration module exists, assume it's a no-op (like v1)
+  }
   
   // Update to latest version
   await writeSchemaVersion(CURRENT_SCHEMA_VERSION, cwdProvider);
@@ -154,7 +112,7 @@ export async function migrateToLatest(
 /**
  * Ensure the schema is up to date
  * Checks version and runs migrations if needed
- * @throws Error if migration fails
+ * @throws Error if migration fails or version is too new
  */
 export async function ensureSchemaVersion(cwdProvider?: () => string): Promise<void> {
   const currentVersion = await readSchemaVersion(cwdProvider);
