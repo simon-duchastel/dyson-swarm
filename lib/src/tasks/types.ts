@@ -1,4 +1,4 @@
-export type TaskStatus = 'open' | 'in-progress' | 'closed';
+export type TaskStatus = 'draft' | 'open' | 'in-progress' | 'closed';
 
 export interface TaskFrontmatter {
   title: string;

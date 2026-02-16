@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { TaskManager } from '../manager.js';
 import { TaskFileUtils } from '../file-utils.js';
+import { StatusUtils } from '../status-utils.js';
+import { TaskStatus } from '../types.js';
 
 // Mock filesystem
 interface MockFileSystem {
@@ -145,6 +147,10 @@ vi.mock('fs', () => ({
       }
       
       return Promise.resolve();
+    }),
+    rmdir: vi.fn((path: string) => {
+      mockFS.directories.delete(path.toString());
+      return Promise.resolve();
     })
   }
 }));
@@ -168,7 +174,57 @@ vi.mock('uuid', () => ({
 // Mock path functions
 vi.mock('node:path', () => ({
   join: vi.fn((...args: string[]) => args.join('/')),
-  resolve: vi.fn((...args: string[]) => args.join('/'))
+  resolve: vi.fn((...args: string[]) => args.join('/')),
+  dirname: vi.fn((path: string) => {
+    const parts = path.split('/');
+    return parts.slice(0, -1).join('/');
+  }),
+}));
+
+// Mock paths module
+vi.mock('../../paths.js', () => ({
+  getDysonDir: vi.fn((cwdProvider?: () => string) => {
+    const cwd = cwdProvider ? cwdProvider() : '/test';
+    return `${cwd}/.swarm`;
+  }),
+  getLockfilePath: vi.fn((cwdProvider?: () => string) => {
+    const cwd = cwdProvider ? cwdProvider() : '/test';
+    return `${cwd}/.swarm/lockfile`;
+  }),
+  getStatusesDir: vi.fn((cwdProvider?: () => string) => {
+    const cwd = cwdProvider ? cwdProvider() : '/test';
+    return `${cwd}/.swarm/statuses`;
+  }),
+  getStatusFile: vi.fn((status: string, cwdProvider?: () => string) => {
+    const cwd = cwdProvider ? cwdProvider() : '/test';
+    return `${cwd}/.swarm/statuses/${status}`;
+  }),
+  getTasksDir: vi.fn((cwdProvider?: () => string) => {
+    const cwd = cwdProvider ? cwdProvider() : '/test';
+    return `${cwd}/.swarm/tasks`;
+  }),
+  getTaskDir: vi.fn((taskId: string, cwdProvider?: () => string) => {
+    const cwd = cwdProvider ? cwdProvider() : '/test';
+    return `${cwd}/.swarm/tasks/${taskId}`;
+  }),
+  getTaskFile: vi.fn((taskId: string, cwdProvider?: () => string) => {
+    const cwd = cwdProvider ? cwdProvider() : '/test';
+    return `${cwd}/.swarm/tasks/${taskId}/${taskId}.task`;
+  }),
+  getSubtasksDir: vi.fn((taskId: string, cwdProvider?: () => string) => {
+    const cwd = cwdProvider ? cwdProvider() : '/test';
+    return `${cwd}/.swarm/tasks/${taskId}/sub-tasks`;
+  }),
+  getSubtaskDir: vi.fn((fullyQualifiedId: string, cwdProvider?: () => string) => {
+    const cwd = cwdProvider ? cwdProvider() : '/test';
+    const [parentId, subtaskId] = fullyQualifiedId.split('/');
+    return `${cwd}/.swarm/tasks/${parentId}/sub-tasks/${subtaskId}`;
+  }),
+  getSubtaskFile: vi.fn((fullyQualifiedId: string, cwdProvider?: () => string) => {
+    const cwd = cwdProvider ? cwdProvider() : '/test';
+    const [parentId, subtaskId] = fullyQualifiedId.split('/');
+    return `${cwd}/.swarm/tasks/${parentId}/sub-tasks/${subtaskId}/${subtaskId}.task`;
+  }),
 }));
 
 describe('TaskManager', () => {
@@ -238,6 +294,8 @@ describe('TaskManager', () => {
       expect(task.subtasks![0].frontmatter.title).toBe('Subtask 1');
       expect(task.subtasks![0].status).toBe('open');
       expect(task.subtasks![1].frontmatter.title).toBe('Subtask 2');
+      // Verify fully qualified ID format
+      expect(task.subtasks![0].id).toContain('/');
     });
   });
 
@@ -252,6 +310,25 @@ describe('TaskManager', () => {
       expect(retrieved).toBeDefined();
       expect(retrieved!.id).toBe(created.id);
       expect(retrieved!.frontmatter.title).toBe('Test Task');
+    });
+
+    it('should retrieve a subtask by fully qualified ID', async () => {
+      const parent = await taskManager.createTask({
+        title: 'Parent Task',
+        description: 'Task with subtasks',
+        subtasks: [
+          {
+            title: 'Subtask 1',
+            description: 'First subtask',
+          },
+        ],
+      });
+
+      const subtaskId = parent.subtasks![0].id;
+      const retrieved = await taskManager.getTask(subtaskId);
+      expect(retrieved).toBeDefined();
+      expect(retrieved!.frontmatter.title).toBe('Subtask 1');
+      expect(retrieved!.id).toBe(subtaskId);
     });
 
     it('should return null for non-existent task', async () => {
@@ -388,6 +465,27 @@ describe('TaskManager', () => {
       });
       expect(updated).toBeNull();
     });
+
+    it('should update subtask fields', async () => {
+      const parent = await taskManager.createTask({
+        title: 'Parent Task',
+        description: 'Task with subtasks',
+        subtasks: [
+          {
+            title: 'Subtask',
+            description: 'Original subtask description',
+          },
+        ],
+      });
+
+      const subtaskId = parent.subtasks![0].id;
+      const updated = await taskManager.updateTask(subtaskId, {
+        title: 'Updated Subtask',
+      });
+
+      expect(updated).toBeDefined();
+      expect(updated!.frontmatter.title).toBe('Updated Subtask');
+    });
   });
 
   describe('changeTaskStatus', () => {
@@ -398,6 +496,23 @@ describe('TaskManager', () => {
       });
 
       const updated = await taskManager.changeTaskStatus(task.id, 'closed');
+      expect(updated!.status).toBe('closed');
+    });
+
+    it('should change subtask status', async () => {
+      const parent = await taskManager.createTask({
+        title: 'Parent Task',
+        description: 'Task with subtasks',
+        subtasks: [
+          {
+            title: 'Subtask',
+            description: 'A subtask',
+          },
+        ],
+      });
+
+      const subtaskId = parent.subtasks![0].id;
+      const updated = await taskManager.changeTaskStatus(subtaskId, 'closed');
       expect(updated!.status).toBe('closed');
     });
 
@@ -418,6 +533,49 @@ describe('TaskManager', () => {
       expect(deleted).toBe(true);
 
       const retrieved = await taskManager.getTask(task.id);
+      expect(retrieved).toBeNull();
+    });
+
+    it('should delete a task with subtasks', async () => {
+      const task = await taskManager.createTask({
+        title: 'Parent Task',
+        description: 'Task with subtasks',
+        subtasks: [
+          {
+            title: 'Subtask 1',
+            description: 'First subtask',
+          },
+        ],
+      });
+
+      const deleted = await taskManager.deleteTask(task.id);
+      expect(deleted).toBe(true);
+
+      const retrieved = await taskManager.getTask(task.id);
+      expect(retrieved).toBeNull();
+
+      const subtaskId = task.subtasks![0].id;
+      const subtaskRetrieved = await taskManager.getTask(subtaskId);
+      expect(subtaskRetrieved).toBeNull();
+    });
+
+    it('should delete a subtask', async () => {
+      const parent = await taskManager.createTask({
+        title: 'Parent Task',
+        description: 'Task with subtasks',
+        subtasks: [
+          {
+            title: 'Subtask',
+            description: 'A subtask',
+          },
+        ],
+      });
+
+      const subtaskId = parent.subtasks![0].id;
+      const deleted = await taskManager.deleteTask(subtaskId);
+      expect(deleted).toBe(true);
+
+      const retrieved = await taskManager.getTask(subtaskId);
       expect(retrieved).toBeNull();
     });
 
@@ -490,7 +648,7 @@ Simple task description.`;
           assignee: 'john.doe',
         },
         description: 'Task description',
-        status: 'in-progress' as const,
+        status: 'in-progress' as TaskStatus,
       };
 
       const taskString = TaskFileUtils.taskToFileString(task);
@@ -507,7 +665,7 @@ Simple task description.`;
           title: 'Simple Task',
         },
         description: 'Simple description',
-        status: 'open' as const,
+        status: 'open' as TaskStatus,
       };
 
       const taskString = TaskFileUtils.taskToFileString(task);
@@ -525,6 +683,127 @@ Simple task description.`;
       
       expect(id1).not.toBe(id2);
       expect(id1).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    });
+  });
+});
+
+describe('StatusUtils', () => {
+  let testCwd: string;
+
+  beforeEach(() => {
+    // Reset mock filesystem
+    mockFS.files.clear();
+    mockFS.directories.clear();
+    mockFS.stats.clear();
+    vi.clearAllMocks();
+    testCwd = '/test/workspace';
+  });
+
+  describe('readStatusFile', () => {
+    it('should return empty array when status file does not exist', async () => {
+      const ids = await StatusUtils.readStatusFile('open', () => testCwd);
+      expect(ids).toEqual([]);
+    });
+
+    it('should read sorted task IDs from status file', async () => {
+      const statusFile = `${testCwd}/.swarm/statuses/open`;
+      mockFS.files.set(statusFile, 'task-c\ntask-a\ntask-b\n');
+      
+      const ids = await StatusUtils.readStatusFile('open', () => testCwd);
+      expect(ids).toEqual(['task-a', 'task-b', 'task-c']);
+    });
+  });
+
+  describe('writeStatusFile', () => {
+    it('should write sorted task IDs to status file', async () => {
+      await StatusUtils.writeStatusFile('open', ['task-c', 'task-a', 'task-b'], () => testCwd);
+      
+      const statusFile = `${testCwd}/.swarm/statuses/open`;
+      const content = mockFS.files.get(statusFile);
+      expect(content).toBe('task-a\ntask-b\ntask-c\n');
+    });
+
+    it('should write empty content for empty array', async () => {
+      await StatusUtils.writeStatusFile('open', [], () => testCwd);
+      
+      const statusFile = `${testCwd}/.swarm/statuses/open`;
+      const content = mockFS.files.get(statusFile);
+      expect(content).toBe('');
+    });
+  });
+
+  describe('addTaskToStatus', () => {
+    it('should add task ID to status file', async () => {
+      const statusFile = `${testCwd}/.swarm/statuses/open`;
+      mockFS.files.set(statusFile, 'task-a\n');
+      
+      const added = await StatusUtils.addTaskToStatus('task-b', 'open', () => testCwd);
+      expect(added).toBe(true);
+      
+      const content = mockFS.files.get(statusFile);
+      expect(content).toBe('task-a\ntask-b\n');
+    });
+
+    it('should return false if task ID already exists', async () => {
+      const statusFile = `${testCwd}/.swarm/statuses/open`;
+      mockFS.files.set(statusFile, 'task-a\n');
+      
+      const added = await StatusUtils.addTaskToStatus('task-a', 'open', () => testCwd);
+      expect(added).toBe(false);
+    });
+  });
+
+  describe('removeTaskFromStatus', () => {
+    it('should remove task ID from status file', async () => {
+      const statusFile = `${testCwd}/.swarm/statuses/open`;
+      mockFS.files.set(statusFile, 'task-a\ntask-b\ntask-c\n');
+      
+      const removed = await StatusUtils.removeTaskFromStatus('task-b', 'open', () => testCwd);
+      expect(removed).toBe(true);
+      
+      const content = mockFS.files.get(statusFile);
+      expect(content).toBe('task-a\ntask-c\n');
+    });
+
+    it('should return false if task ID does not exist', async () => {
+      const statusFile = `${testCwd}/.swarm/statuses/open`;
+      mockFS.files.set(statusFile, 'task-a\n');
+      
+      const removed = await StatusUtils.removeTaskFromStatus('task-b', 'open', () => testCwd);
+      expect(removed).toBe(false);
+    });
+  });
+
+  describe('moveTaskStatus', () => {
+    it('should move task from one status to another', async () => {
+      const openFile = `${testCwd}/.swarm/statuses/open`;
+      const closedFile = `${testCwd}/.swarm/statuses/closed`;
+      mockFS.files.set(openFile, 'task-a\ntask-b\n');
+      mockFS.files.set(closedFile, 'task-c\n');
+      
+      await StatusUtils.moveTaskStatus('task-b', 'open', 'closed', () => testCwd);
+      
+      const openContent = mockFS.files.get(openFile);
+      const closedContent = mockFS.files.get(closedFile);
+      
+      expect(openContent).toBe('task-a\n');
+      // Task IDs should be sorted lexicographically: task-b < task-c
+      expect(closedContent).toBe('task-b\ntask-c\n');
+    });
+  });
+
+  describe('findTaskStatus', () => {
+    it('should find task in open status', async () => {
+      const openFile = `${testCwd}/.swarm/statuses/open`;
+      mockFS.files.set(openFile, 'task-a\ntask-b\n');
+      
+      const status = await StatusUtils.findTaskStatus('task-b', () => testCwd);
+      expect(status).toBe('open');
+    });
+
+    it('should return null for non-existent task', async () => {
+      const status = await StatusUtils.findTaskStatus('task-x', () => testCwd);
+      expect(status).toBeNull();
     });
   });
 });
