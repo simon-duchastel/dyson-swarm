@@ -4,11 +4,15 @@ import { unassignAction } from '../unassign.js';
 // Mock the TaskManager
 const mockUnassignTask = vi.fn();
 
-vi.mock("dyson-swarm", () => ({
-  TaskManager: vi.fn().mockImplementation(() => ({
-    unassignTask: mockUnassignTask,
-  })),
-}));
+vi.mock("dyson-swarm", function() {
+  return {
+    TaskManager: vi.fn().mockImplementation(function() {
+      return {
+        unassignTask: mockUnassignTask,
+      };
+    }),
+  };
+});
 
 // Mock console
 const mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});

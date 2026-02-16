@@ -4,11 +4,15 @@ import { statusAction } from '../status.js';
 // Mock the TaskManager
 const mockChangeTaskStatus = vi.fn();
 
-vi.mock("dyson-swarm", () => ({
-  TaskManager: vi.fn().mockImplementation(() => ({
-    changeTaskStatus: mockChangeTaskStatus,
-  })),
-}));
+vi.mock("dyson-swarm", function() {
+  return {
+    TaskManager: vi.fn().mockImplementation(function() {
+      return {
+        changeTaskStatus: mockChangeTaskStatus,
+      };
+    }),
+  };
+});
 
 // Mock console
 const mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});

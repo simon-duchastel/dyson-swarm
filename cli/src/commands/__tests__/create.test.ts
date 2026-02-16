@@ -4,11 +4,15 @@ import { createAction } from '../create.js';
 // Mock the TaskManager
 const mockCreateTask = vi.fn();
 
-vi.mock("dyson-swarm", () => ({
-  TaskManager: vi.fn().mockImplementation(() => ({
-    createTask: mockCreateTask,
-  })),
-}));
+vi.mock("dyson-swarm", function() {
+  return {
+    TaskManager: vi.fn().mockImplementation(function() {
+      return {
+        createTask: mockCreateTask,
+      };
+    }),
+  };
+});
 
 // Mock console
 const mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});

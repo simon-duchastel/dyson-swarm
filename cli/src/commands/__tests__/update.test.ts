@@ -4,11 +4,15 @@ import { updateAction } from '../update.js';
 // Mock the TaskManager
 const mockUpdateTask = vi.fn();
 
-vi.mock("dyson-swarm", () => ({
-  TaskManager: vi.fn().mockImplementation(() => ({
-    updateTask: mockUpdateTask,
-  })),
-}));
+vi.mock("dyson-swarm", function() {
+  return {
+    TaskManager: vi.fn().mockImplementation(function() {
+      return {
+        updateTask: mockUpdateTask,
+      };
+    }),
+  };
+});
 
 // Mock console
 const mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});

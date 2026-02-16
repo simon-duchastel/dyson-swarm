@@ -27,14 +27,14 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "@types/proper-lockfile": "^4.1.4",
-    "@types/uuid": "^10.0.0",
-    "tsx": "^4.0.0",
-    "typescript": "^5.0.0",
-    "vitest": "^1.6.1"
+    "@types/node": "25.2.3",
+    "@types/proper-lockfile": "4.1.4",
+    "@types/uuid": "11.0.0",
+    "tsx": "4.21.0",
+    "typescript": "5.9.3",
+    "vitest": "4.0.18"
   },
   "dependencies": {
-    "cliffy-flat-help": "^1.0.0"
+    "cliffy-flat-help": "1.2.1"
   }
 }
