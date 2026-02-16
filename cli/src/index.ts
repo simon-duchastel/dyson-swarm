@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from "@cliffy/command";
+import { flatHelp } from "cliffy-flat-help";
 
 import { createCommand } from "./commands/create.js";
 import { listCommand } from "./commands/list.js";
@@ -10,18 +11,15 @@ import { statusCommand } from "./commands/status.js";
 import { assignCommand } from "./commands/assign.js";
 import { unassignCommand } from "./commands/unassign.js";
 import { deleteCommand } from "./commands/delete.js";
-import { generateHelp } from "./help.js";
 
 await new Command()
-  .help(function() {
-    return generateHelp(this);
-  })
+  .help(flatHelp())
   .name("swarm")
+  .description("A markdown-based issue tracking system CLI")
+  .version("1.0.0")
   .action(function () {
     this.showHelp();
   })
-  .description("A markdown-based issue tracking system CLI")
-  .version("1.0.0")
   .command("create", createCommand)
   .command("list", listCommand)
   .command("get", getCommand)

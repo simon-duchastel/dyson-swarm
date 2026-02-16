@@ -29,6 +29,7 @@
     "@cliffy/flags": "npm:@jsr/cliffy__flags@^1.0.0",
     "@cliffy/table": "npm:@jsr/cliffy__table@^1.0.0",
     "cliffy": "^2.5.1",
+    "cliffy-flat-help": "1.0.0",
     "dyson-swarm": "^1.0.0"
   },
   "devDependencies": {
