@@ -54,24 +54,31 @@ export function getTaskFile(taskId: string, cwdProvider?: () => string): string 
  * Path to sub-tasks directory within a task
  */
 export function getSubtasksDir(taskId: string, cwdProvider?: () => string): string {
+  if (taskId.includes('/')) {
+    return join(getSubtaskDir(taskId, cwdProvider), 'sub-tasks');
+  }
   return join(getTaskDir(taskId, cwdProvider), 'sub-tasks');
 }
 
 /**
  * Path to a specific subtask directory
- * Uses fully qualified ID: parentId/subtaskId
+ * Uses fully qualified ID: parentId/subtaskId or nested: grandParentId/parentId/subtaskId
  */
 export function getSubtaskDir(fullyQualifiedId: string, cwdProvider?: () => string): string {
-  const [parentId, subtaskId] = fullyQualifiedId.split('/');
+  const parts = fullyQualifiedId.split('/');
+  const subtaskId = parts[parts.length - 1];
+  const parentId = parts.slice(0, -1).join('/');
+  
   return join(getSubtasksDir(parentId, cwdProvider), subtaskId);
 }
 
 /**
  * Path to a specific subtask file
- * Uses fully qualified ID: parentId/subtaskId
+ * Uses fully qualified ID: parentId/subtaskId or nested: grandParentId/parentId/subtaskId
  */
 export function getSubtaskFile(fullyQualifiedId: string, cwdProvider?: () => string): string {
-  const [parentId, subtaskId] = fullyQualifiedId.split('/');
+  const parts = fullyQualifiedId.split('/');
+  const subtaskId = parts[parts.length - 1];
   return join(getSubtaskDir(fullyQualifiedId, cwdProvider), `${subtaskId}.task`);
 }
 

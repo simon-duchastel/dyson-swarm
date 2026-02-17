@@ -65,17 +65,6 @@ describe('list command', () => {
     expect(mockListTasks).toHaveBeenCalledWith({ assignee: 'john.doe' });
   });
 
-  it('should filter by hasSubtasks', async () => {
-    const mockTasks = [
-      { id: 'task-1', frontmatter: { title: 'Task 1' }, status: 'open', subtasks: [{ id: 'sub-1' }] },
-    ];
-    mockListTasks.mockResolvedValue(mockTasks);
-
-    await listAction({ hasSubtasks: true });
-
-    expect(mockListTasks).toHaveBeenCalledWith({ hasSubtasks: true });
-  });
-
   it('should handle invalid status', async () => {
     await expect(listAction({ status: 'invalid' })).rejects.toThrow('process.exit called');
 

@@ -241,17 +241,28 @@ vi.mock('../../paths.js', () => ({
   }),
   getSubtasksDir: vi.fn((taskId: string, cwdProvider?: () => string) => {
     const cwd = cwdProvider ? cwdProvider() : '/test';
-    return `${cwd}/.swarm/tasks/${taskId}/sub-tasks`;
+    if (!taskId.includes('/')) {
+      return `${cwd}/.swarm/tasks/${taskId}/sub-tasks`;
+    }
+    const parts = taskId.split('/');
+    const basePath = `${cwd}/.swarm/tasks/${parts[0]}`;
+    const subtaskPath = parts.slice(1).map(p => `sub-tasks/${p}`).join('/');
+    return `${basePath}/${subtaskPath}/sub-tasks`;
   }),
   getSubtaskDir: vi.fn((fullyQualifiedId: string, cwdProvider?: () => string) => {
     const cwd = cwdProvider ? cwdProvider() : '/test';
-    const [parentId, subtaskId] = fullyQualifiedId.split('/');
-    return `${cwd}/.swarm/tasks/${parentId}/sub-tasks/${subtaskId}`;
+    const parts = fullyQualifiedId.split('/');
+    const basePath = `${cwd}/.swarm/tasks/${parts[0]}`;
+    const subtaskPath = parts.slice(1).map(p => `sub-tasks/${p}`).join('/');
+    return `${basePath}/${subtaskPath}`;
   }),
   getSubtaskFile: vi.fn((fullyQualifiedId: string, cwdProvider?: () => string) => {
     const cwd = cwdProvider ? cwdProvider() : '/test';
-    const [parentId, subtaskId] = fullyQualifiedId.split('/');
-    return `${cwd}/.swarm/tasks/${parentId}/sub-tasks/${subtaskId}/${subtaskId}.task`;
+    const parts = fullyQualifiedId.split('/');
+    const subtaskId = parts[parts.length - 1];
+    const basePath = `${cwd}/.swarm/tasks/${parts[0]}`;
+    const subtaskPath = parts.slice(1).map(p => `sub-tasks/${p}`).join('/');
+    return `${basePath}/${subtaskPath}/${subtaskId}.task`;
   }),
 }));
 
@@ -289,7 +300,6 @@ describe('TaskManager', () => {
       expect(task.description).toBe('This is a test task');
       expect(task.status).toBe('open');
       expect(task.frontmatter.assignee).toBeUndefined();
-      expect(task.subtasks).toEqual([]);
     });
 
     it('should create an in-progress task with assignee', async () => {
@@ -303,28 +313,65 @@ describe('TaskManager', () => {
       expect(task.frontmatter.assignee).toBe('john.doe');
     });
 
-    it('should create a task with subtasks', async () => {
-      const task = await taskManager.createTask({
+    it('should create a subtask with parentTaskId', async () => {
+      const parent = await taskManager.createTask({
         title: 'Parent Task',
         description: 'Task with subtasks',
-        subtasks: [
-          {
-            title: 'Subtask 1',
-            description: 'First subtask',
-          },
-          {
-            title: 'Subtask 2',
-            description: 'Second subtask',
-          },
-        ],
       });
 
-      expect(task.subtasks).toHaveLength(2);
-      expect(task.subtasks![0].frontmatter.title).toBe('Subtask 1');
-      expect(task.subtasks![0].status).toBe('open');
-      expect(task.subtasks![1].frontmatter.title).toBe('Subtask 2');
-      // Verify fully qualified ID format
-      expect(task.subtasks![0].id).toContain('/');
+      const subtask1 = await taskManager.createTask({
+        title: 'Subtask 1',
+        description: 'First subtask',
+        parentTaskId: parent.id,
+      });
+
+      const subtask2 = await taskManager.createTask({
+        title: 'Subtask 2',
+        description: 'Second subtask',
+        parentTaskId: parent.id,
+      });
+
+      expect(subtask1.frontmatter.title).toBe('Subtask 1');
+      expect(subtask1.status).toBe('open');
+      expect(subtask1.id).toContain('/');
+      expect(subtask1.id).toContain(parent.id);
+      
+      expect(subtask2.frontmatter.title).toBe('Subtask 2');
+    });
+
+    it('should support deeply nested subtasks', async () => {
+      const level1 = await taskManager.createTask({
+        title: 'Level 1 Task',
+        description: 'Top level',
+      });
+
+      const level2 = await taskManager.createTask({
+        title: 'Level 2 Subtask',
+        description: 'Nested one level',
+        parentTaskId: level1.id,
+      });
+
+      const level3 = await taskManager.createTask({
+        title: 'Level 3 Subtask',
+        description: 'Nested two levels',
+        parentTaskId: level2.id,
+      });
+
+      const level4 = await taskManager.createTask({
+        title: 'Level 4 Subtask',
+        description: 'Nested three levels',
+        parentTaskId: level3.id,
+      });
+
+      expect(level2.id).toBe(`${level1.id}/${level2.id.split('/')[1]}`);
+      expect(level3.id).toBe(`${level2.id}/${level3.id.split('/')[2]}`);
+      expect(level4.id).toBe(`${level3.id}/${level4.id.split('/')[3]}`);
+      
+      expect(level4.id.split('/').length).toBe(4);
+
+      const retrieved = await taskManager.getTask(level4.id);
+      expect(retrieved).toBeDefined();
+      expect(retrieved!.frontmatter.title).toBe('Level 4 Subtask');
     });
   });
 
@@ -509,16 +556,15 @@ describe('TaskManager', () => {
       const parent = await taskManager.createTask({
         title: 'Parent Task',
         description: 'Task with subtasks',
-        subtasks: [
-          {
-            title: 'Subtask',
-            description: 'Original subtask description',
-          },
-        ],
       });
 
-      const subtaskId = parent.subtasks![0].id;
-      const updated = await taskManager.updateTask(subtaskId, {
+      const subtask = await taskManager.createTask({
+        title: 'Subtask',
+        description: 'Original subtask description',
+        parentTaskId: parent.id,
+      });
+
+      const updated = await taskManager.updateTask(subtask.id, {
         title: 'Updated Subtask',
       });
 
@@ -542,16 +588,15 @@ describe('TaskManager', () => {
       const parent = await taskManager.createTask({
         title: 'Parent Task',
         description: 'Task with subtasks',
-        subtasks: [
-          {
-            title: 'Subtask',
-            description: 'A subtask',
-          },
-        ],
       });
 
-      const subtaskId = parent.subtasks![0].id;
-      const updated = await taskManager.changeTaskStatus(subtaskId, 'closed');
+      const subtask = await taskManager.createTask({
+        title: 'Subtask',
+        description: 'A subtask',
+        parentTaskId: parent.id,
+      });
+
+      const updated = await taskManager.changeTaskStatus(subtask.id, 'closed');
       expect(updated!.status).toBe('closed');
     });
 
@@ -579,12 +624,12 @@ describe('TaskManager', () => {
       const task = await taskManager.createTask({
         title: 'Parent Task',
         description: 'Task with subtasks',
-        subtasks: [
-          {
-            title: 'Subtask 1',
-            description: 'First subtask',
-          },
-        ],
+      });
+
+      const subtask = await taskManager.createTask({
+        title: 'Subtask 1',
+        description: 'First subtask',
+        parentTaskId: task.id,
       });
 
       const deleted = await taskManager.deleteTask(task.id);
@@ -593,8 +638,7 @@ describe('TaskManager', () => {
       const retrieved = await taskManager.getTask(task.id);
       expect(retrieved).toBeNull();
 
-      const subtaskId = task.subtasks![0].id;
-      const subtaskRetrieved = await taskManager.getTask(subtaskId);
+      const subtaskRetrieved = await taskManager.getTask(subtask.id);
       expect(subtaskRetrieved).toBeNull();
     });
 
@@ -602,19 +646,18 @@ describe('TaskManager', () => {
       const parent = await taskManager.createTask({
         title: 'Parent Task',
         description: 'Task with subtasks',
-        subtasks: [
-          {
-            title: 'Subtask',
-            description: 'A subtask',
-          },
-        ],
       });
 
-      const subtaskId = parent.subtasks![0].id;
-      const deleted = await taskManager.deleteTask(subtaskId);
+      const subtask = await taskManager.createTask({
+        title: 'Subtask',
+        description: 'A subtask',
+        parentTaskId: parent.id,
+      });
+
+      const deleted = await taskManager.deleteTask(subtask.id);
       expect(deleted).toBe(true);
 
-      const retrieved = await taskManager.getTask(subtaskId);
+      const retrieved = await taskManager.getTask(subtask.id);
       expect(retrieved).toBeNull();
     });
 

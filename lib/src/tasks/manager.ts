@@ -77,14 +77,11 @@ export class TaskManager {
         return null;
       }
       
-      const subtasks = await this.loadSubtasks(taskId);
-      
       return {
         id: taskId,
         frontmatter,
         description,
         status,
-        subtasks,
       };
     } catch (error) {
       throw new Error(`Failed to load task ${taskId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -123,7 +120,6 @@ export class TaskManager {
    */
   private async loadSubtask(fullyQualifiedId: string): Promise<Task | null> {
     const subtaskFile = getSubtaskFile(fullyQualifiedId, this.cwdProvider);
-    const [, subtaskId] = fullyQualifiedId.split('/');
     
     if (!(await TaskFileUtils.fileExists(subtaskFile))) {
       return null;
@@ -156,56 +152,46 @@ export class TaskManager {
       const taskId = uuidv4();
       const status: TaskStatus = options.assignee ? 'in-progress' : 'open';
       
-      const task: Task = {
-        id: taskId,
-        frontmatter: {
-          title: options.title,
-          assignee: options.assignee,
-        },
-        description: options.description,
-        status,
-        subtasks: [],
-      };
-
-      // Create task directory and file
-      const taskDir = getTaskDir(taskId, this.cwdProvider);
-      const taskFile = getTaskFile(taskId, this.cwdProvider);
+      let fullyQualifiedId: string;
+      let task: Task;
       
-      await TaskFileUtils.ensureDir(taskDir);
-      await TaskFileUtils.writeTaskFile(taskFile, task);
-
-      // Add to status file
-      await StatusUtils.addTaskToStatus(taskId, status, this.cwdProvider);
-
-      // Create subtasks if provided
-      if (options.subtasks && options.subtasks.length > 0) {
-        const subtasks: Task[] = [];
+      if (options.parentTaskId) {
+        fullyQualifiedId = `${options.parentTaskId}/${taskId}`;
+        task = {
+          id: fullyQualifiedId,
+          frontmatter: {
+            title: options.title,
+          },
+          description: options.description,
+          status: 'open',
+        };
         
-        for (const subtaskOptions of options.subtasks) {
-          const subtaskId = uuidv4();
-          const fullyQualifiedId = `${taskId}/${subtaskId}`;
-          const subtask: Task = {
-            id: fullyQualifiedId,
-            frontmatter: {
-              title: subtaskOptions.title,
-            },
-            description: subtaskOptions.description,
-            status: 'open',
-          };
-
-          const subtaskDir = getSubtaskDir(fullyQualifiedId, this.cwdProvider);
-          const subtaskFile = join(subtaskDir, `${subtaskId}.task`);
-          
-          await TaskFileUtils.ensureDir(subtaskDir);
-          await TaskFileUtils.writeTaskFile(subtaskFile, subtask);
-          
-          // Add to open status file
-          await StatusUtils.addTaskToStatus(fullyQualifiedId, 'open', this.cwdProvider);
-          
-          subtasks.push(subtask);
-        }
+        const subtaskDir = getSubtaskDir(fullyQualifiedId, this.cwdProvider);
+        const subtaskFile = getSubtaskFile(fullyQualifiedId, this.cwdProvider);
         
-        task.subtasks = subtasks;
+        await TaskFileUtils.ensureDir(subtaskDir);
+        await TaskFileUtils.writeTaskFile(subtaskFile, task);
+        
+        await StatusUtils.addTaskToStatus(fullyQualifiedId, 'open', this.cwdProvider);
+      } else {
+        fullyQualifiedId = taskId;
+        task = {
+          id: taskId,
+          frontmatter: {
+            title: options.title,
+            assignee: options.assignee,
+          },
+          description: options.description,
+          status,
+        };
+        
+        const taskDir = getTaskDir(taskId, this.cwdProvider);
+        const taskFile = getTaskFile(taskId, this.cwdProvider);
+        
+        await TaskFileUtils.ensureDir(taskDir);
+        await TaskFileUtils.writeTaskFile(taskFile, task);
+        
+        await StatusUtils.addTaskToStatus(taskId, status, this.cwdProvider);
       }
 
       return task;
