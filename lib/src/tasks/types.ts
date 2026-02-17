@@ -27,6 +27,7 @@ export interface UpdateTaskOptions {
 
 export interface TaskFilter {
   status?: TaskStatus;
+  taskId?: string;
 }
 
 export interface TaskManagerOptions {
