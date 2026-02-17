@@ -63,7 +63,10 @@ export class TaskManager {
    * Load a task from its file
    */
   private async loadTaskFromFile(taskId: string): Promise<Task | null> {
-    const taskFile = getTaskFile(taskId, this.cwdProvider);
+    // Use appropriate file getter for subtasks vs main tasks
+    const taskFile = taskId.includes('/') 
+      ? getSubtaskFile(taskId, this.cwdProvider)
+      : getTaskFile(taskId, this.cwdProvider);
     
     if (!(await TaskFileUtils.fileExists(taskFile))) {
       return null;
@@ -224,11 +227,6 @@ export class TaskManager {
         const taskIds = await StatusUtils.readStatusFile(status, this.cwdProvider);
 
         for (const taskId of taskIds) {
-          // Skip subtasks in main listing (they have / in ID)
-          if (taskId.includes('/')) {
-            continue;
-          }
-          
           const task = await this.loadTaskFromFile(taskId);
           if (task) {
             tasks.push(task);

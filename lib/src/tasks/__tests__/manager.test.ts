@@ -432,6 +432,29 @@ describe('TaskManager', () => {
       expect(inProgressTasks[0].frontmatter.title).toBe('Assigned Task');
     });
 
+    it('should include subtasks in the listing', async () => {
+      const parent = await taskManager.createTask({
+        title: 'Parent Task',
+        description: 'Main task',
+      });
+
+      const subtask = await taskManager.createTask({
+        title: 'Subtask',
+        description: 'A subtask',
+        parentTaskId: parent.id,
+      });
+
+      const tasks = await taskManager.listTasks();
+      
+      // Should include both parent and subtask
+      expect(tasks).toHaveLength(2);
+      
+      // Verify both are present
+      const taskIds = tasks.map(t => t.id);
+      expect(taskIds).toContain(parent.id);
+      expect(taskIds).toContain(subtask.id);
+    });
+
   });
 
   describe('listTaskStream', () => {
