@@ -73,6 +73,31 @@ vi.mock('fs', () => ({
         isFile: () => isFile,
       });
     }),
+    rename: vi.fn((oldPath: string, newPath: string) => {
+      // Move files
+      for (const [filePath, content] of mockFS.files) {
+        if (filePath.startsWith(oldPath.toString())) {
+          const newFilePath = filePath.replace(oldPath.toString(), newPath.toString());
+          mockFS.files.set(newFilePath, content);
+          mockFS.files.delete(filePath);
+        }
+      }
+      
+      // Move directories
+      for (const dirPath of mockFS.directories) {
+        if (dirPath.startsWith(oldPath.toString())) {
+          const newDirPath = dirPath.replace(oldPath.toString(), newPath.toString());
+          mockFS.directories.add(newDirPath);
+          mockFS.directories.delete(dirPath);
+        }
+      }
+      
+      return Promise.resolve();
+    }),
+    rmdir: vi.fn((path: string) => {
+      mockFS.directories.delete(path.toString());
+      return Promise.resolve();
+    }),
   },
 }));
 
@@ -80,6 +105,10 @@ vi.mock('fs', () => ({
 vi.mock('node:path', () => ({
   join: vi.fn((...args: string[]) => args.join('/')),
   resolve: vi.fn((...args: string[]) => args.join('/')),
+  dirname: vi.fn((path: string) => {
+    const parts = path.split('/');
+    return parts.slice(0, -1).join('/');
+  }),
 }));
 
 // Mock paths module
@@ -87,6 +116,26 @@ vi.mock('../../../paths.js', () => ({
   getDysonDir: vi.fn((cwdProvider?: () => string) => {
     const cwd = cwdProvider ? cwdProvider() : '/test';
     return `${cwd}/.swarm`;
+  }),
+  getStatusesDir: vi.fn((cwdProvider?: () => string) => {
+    const cwd = cwdProvider ? cwdProvider() : '/test';
+    return `${cwd}/.swarm/statuses`;
+  }),
+  getStatusFile: vi.fn((status: string, cwdProvider?: () => string) => {
+    const cwd = cwdProvider ? cwdProvider() : '/test';
+    return `${cwd}/.swarm/statuses/${status}`;
+  }),
+  getTasksDir: vi.fn((cwdProvider?: () => string) => {
+    const cwd = cwdProvider ? cwdProvider() : '/test';
+    return `${cwd}/.swarm/tasks`;
+  }),
+  getTaskDir: vi.fn((taskId: string, cwdProvider?: () => string) => {
+    const cwd = cwdProvider ? cwdProvider() : '/test';
+    return `${cwd}/.swarm/tasks/${taskId}`;
+  }),
+  getLockfilePath: vi.fn((cwdProvider?: () => string) => {
+    const cwd = cwdProvider ? cwdProvider() : '/test';
+    return `${cwd}/.swarm/lockfile`;
   }),
 }));
 
@@ -216,8 +265,6 @@ describe('Schema Version', () => {
       const versionPath = `${testCwd}/.swarm/${VERSION_FILE_NAME}`;
       mockFS.files.set(versionPath, '1');
       
-      // Assuming CURRENT_SCHEMA_VERSION > 1 in future, this would migrate
-      // For now with CURRENT_SCHEMA_VERSION = 1, it stays the same
       await ensureSchemaVersion(cwdProvider);
       
       expect(mockFS.files.get(versionPath)).toBe(CURRENT_SCHEMA_VERSION.toString());
@@ -247,7 +294,7 @@ describe('Schema Version', () => {
       
       await migrateToLatest(1, cwdProvider);
       
-      // Should still be current version (1 for now)
+      // Should be current version (2)
       expect(mockFS.files.get(versionPath)).toBe(CURRENT_SCHEMA_VERSION.toString());
     });
 
@@ -296,8 +343,8 @@ describe('Schema Version', () => {
   });
 
   describe('CURRENT_SCHEMA_VERSION', () => {
-    it('should be set to 1', () => {
-      expect(CURRENT_SCHEMA_VERSION).toBe(1);
+    it('should be set to 2', () => {
+      expect(CURRENT_SCHEMA_VERSION).toBe(2);
     });
 
     it('should be a positive integer', () => {

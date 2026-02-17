@@ -8,43 +8,84 @@ export function getDysonDir(cwdProvider: () => string = () => process.cwd()): st
 }
 
 /**
- * Path to the tasks directory
+ * Path to the lockfile (moved to root in v2)
+ */
+export function getLockfilePath(cwdProvider?: () => string): string {
+  return join(getDysonDir(cwdProvider), 'lockfile');
+}
+
+/**
+ * Path to the statuses directory (new in v2)
+ */
+export function getStatusesDir(cwdProvider?: () => string): string {
+  return join(getDysonDir(cwdProvider), 'statuses');
+}
+
+/**
+ * Path to a specific status file (new in v2)
+ * Contains sorted list of task IDs
+ */
+export function getStatusFile(status: 'draft' | 'open' | 'in-progress' | 'closed', cwdProvider?: () => string): string {
+  return join(getStatusesDir(cwdProvider), status);
+}
+
+/**
+ * Path to the tasks directory (flat structure in v2)
  */
 export function getTasksDir(cwdProvider?: () => string): string {
   return join(getDysonDir(cwdProvider), 'tasks');
 }
 
 /**
- * Path to the task lockfile
+ * Path to a specific task directory (flat in v2, no status in path)
  */
-export function getTaskLockFile(cwdProvider?: () => string): string {
-  return join(getTasksDir(cwdProvider), 'lockfile');
+export function getTaskDir(taskId: string, cwdProvider?: () => string): string {
+  return join(getTasksDir(cwdProvider), taskId);
 }
 
 /**
- * Path to a task status directory
+ * Path to a specific task file (flat in v2, no status in path)
  */
-export function getTaskStatusDir(status: 'open' | 'in-progress' | 'closed', cwdProvider?: () => string): string {
-  return join(getTasksDir(cwdProvider), status);
-}
-
-/**
- * Path to a specific task directory
- */
-export function getTaskDir(taskId: string, status: 'open' | 'in-progress' | 'closed', cwdProvider?: () => string): string {
-  return join(getTaskStatusDir(status, cwdProvider), taskId);
-}
-
-/**
- * Path to a specific task file
- */
-export function getTaskFile(taskId: string, status: 'open' | 'in-progress' | 'closed', cwdProvider?: () => string): string {
-  return join(getTaskDir(taskId, status, cwdProvider), `${taskId}.task`);
+export function getTaskFile(taskId: string, cwdProvider?: () => string): string {
+  return join(getTaskDir(taskId, cwdProvider), `${taskId}.task`);
 }
 
 /**
  * Path to sub-tasks directory within a task
  */
-export function getSubtasksDir(taskId: string, status: 'open' | 'in-progress' | 'closed', cwdProvider?: () => string): string {
-  return join(getTaskDir(taskId, status, cwdProvider), 'sub-tasks');
+export function getSubtasksDir(taskId: string, cwdProvider?: () => string): string {
+  return join(getTaskDir(taskId, cwdProvider), 'sub-tasks');
+}
+
+/**
+ * Path to a specific subtask directory
+ * Uses fully qualified ID: parentId/subtaskId
+ */
+export function getSubtaskDir(fullyQualifiedId: string, cwdProvider?: () => string): string {
+  const [parentId, subtaskId] = fullyQualifiedId.split('/');
+  return join(getSubtasksDir(parentId, cwdProvider), subtaskId);
+}
+
+/**
+ * Path to a specific subtask file
+ * Uses fully qualified ID: parentId/subtaskId
+ */
+export function getSubtaskFile(fullyQualifiedId: string, cwdProvider?: () => string): string {
+  const [parentId, subtaskId] = fullyQualifiedId.split('/');
+  return join(getSubtaskDir(fullyQualifiedId, cwdProvider), `${subtaskId}.task`);
+}
+
+// Deprecated v1 functions - kept for reference but not used in v2
+/**
+ * @deprecated Use getLockfilePath instead (moved to root in v2)
+ */
+export function getTaskLockFile(cwdProvider?: () => string): string {
+  return getLockfilePath(cwdProvider);
+}
+
+/**
+ * @deprecated v2 uses flat task structure - status is tracked in status files
+ */
+export function getTaskStatusDir(_status: string, cwdProvider?: () => string): string {
+  return getTasksDir(cwdProvider);
 }
