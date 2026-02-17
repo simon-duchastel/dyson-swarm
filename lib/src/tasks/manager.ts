@@ -216,11 +216,47 @@ export class TaskManager {
   }
 
   /**
+   * Recursively collect all subtasks for a given task
+   */
+  private async collectAllSubtasks(parentId: string): Promise<Task[]> {
+    const allSubtasks: Task[] = [];
+    const directSubtasks = await this.loadSubtasks(parentId);
+    
+    for (const subtask of directSubtasks) {
+      allSubtasks.push(subtask);
+      // Recursively get nested subtasks
+      const nestedSubtasks = await this.collectAllSubtasks(subtask.id);
+      allSubtasks.push(...nestedSubtasks);
+    }
+    
+    return allSubtasks;
+  }
+
+  /**
    * List tasks with optional filtering
    */
   async listTasks(filter: TaskFilter = {}): Promise<Task[]> {
     return this.withLock(async () => {
       const tasks: Task[] = [];
+      
+      // If taskId filter is specified, get that task and all its subtasks
+      if (filter.taskId) {
+        const task = await this.loadTaskFromFile(filter.taskId);
+        if (task) {
+          tasks.push(task);
+          // Recursively collect all subtasks
+          const subtasks = await this.collectAllSubtasks(filter.taskId);
+          tasks.push(...subtasks);
+        }
+        
+        // Apply status filter if specified
+        if (filter.status) {
+          return tasks.filter(t => t.status === filter.status);
+        }
+        
+        return tasks;
+      }
+      
       const statuses: TaskStatus[] = filter.status ? [filter.status] : ['draft', 'open', 'in-progress', 'closed'];
 
       for (const status of statuses) {

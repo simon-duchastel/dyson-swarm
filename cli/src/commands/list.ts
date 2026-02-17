@@ -19,6 +19,10 @@ export async function listAction(options: any) {
       filter.assignee = options.assignee;
     }
 
+    if (options.task) {
+      filter.taskId = options.task;
+    }
+
     const tasks = await taskManager.listTasks(filter);
 
     if (tasks.length === 0) {
@@ -47,4 +51,5 @@ export const listCommand: any = new Command()
   .description("List tasks with optional filters.")
   .option("-s, --status <status>", "Filter by status (open, in-progress, closed).")
   .option("-a, --assignee <assignee>", "Filter by assignee.")
+  .option("-t, --task <taskId>", "Filter by task ID and include all subtasks (nested).")
   .action(listAction);
