@@ -26,6 +26,9 @@ const mockUUIDs = [
   '55555555-5555-4555-8555-555555555555'
 ];
 
+// Track file watchers for testing
+const fileWatchers = new Map<string, Set<(curr: { mtime: Date }, prev: { mtime: Date }) => void>>();
+
 // Mock fs module
 vi.mock('fs', () => ({
   promises: {
@@ -37,9 +40,20 @@ vi.mock('fs', () => ({
       return Promise.resolve(content);
     }),
     writeFile: vi.fn((path: string, content: string) => {
-      mockFS.files.set(path.toString(), content);
-      const dirPath = path.toString().split('/').slice(0, -1).join('/');
+      const pathStr = path.toString();
+      const hadFile = mockFS.files.has(pathStr);
+      mockFS.files.set(pathStr, content);
+      const dirPath = pathStr.split('/').slice(0, -1).join('/');
       mockFS.directories.add(dirPath);
+      
+      // Trigger watchers if file was modified
+      const watchers = fileWatchers.get(pathStr);
+      if (watchers && hadFile) {
+        const now = new Date();
+        const prev = new Date(now.getTime() - 1000);
+        watchers.forEach(cb => cb({ mtime: now }, { mtime: prev }));
+      }
+      
       return Promise.resolve();
     }),
     mkdir: vi.fn((path: string) => {
@@ -152,7 +166,21 @@ vi.mock('fs', () => ({
       mockFS.directories.delete(path.toString());
       return Promise.resolve();
     })
-  }
+  },
+  watchFile: vi.fn((path: string, options: unknown, listener: (curr: { mtime: Date }, prev: { mtime: Date }) => void) => {
+    const pathStr = path.toString();
+    if (!fileWatchers.has(pathStr)) {
+      fileWatchers.set(pathStr, new Set());
+    }
+    fileWatchers.get(pathStr)!.add(listener);
+  }),
+  unwatchFile: vi.fn((path: string, listener: (curr: { mtime: Date }, prev: { mtime: Date }) => void) => {
+    const pathStr = path.toString();
+    const watchers = fileWatchers.get(pathStr);
+    if (watchers) {
+      watchers.delete(listener);
+    }
+  })
 }));
 
 // Mock proper-lockfile
@@ -236,6 +264,7 @@ describe('TaskManager', () => {
     mockFS.files.clear();
     mockFS.directories.clear();
     mockFS.stats.clear();
+    fileWatchers.clear();
     mockUUIDCounter = 1;
     
     // Clear all vi.fn mocks
@@ -356,41 +385,70 @@ describe('TaskManager', () => {
       expect(inProgressTasks[0].frontmatter.title).toBe('Assigned Task');
     });
 
-    it('should filter tasks by assignee', async () => {
+  });
+
+  describe('listTaskStream', () => {
+    it('should yield initial task list', async () => {
       await taskManager.createTask({
         title: 'Task 1',
-        description: 'Task for John',
+        description: 'First task',
+      });
+
+      const stream = taskManager.listTaskStream();
+      const firstValue = await stream.next();
+      
+      expect(firstValue.done).toBe(false);
+      expect(firstValue.value).toHaveLength(1);
+      expect(firstValue.value![0].frontmatter.title).toBe('Task 1');
+      
+      // Clean up - close the stream
+      await stream.return?.();
+    });
+
+    it('should be a valid async generator', async () => {
+      // Create a task
+      await taskManager.createTask({
+        title: 'Open Task',
+        description: 'An open task',
+      });
+
+      const stream = taskManager.listTaskStream();
+      
+      // Verify it's an async generator
+      expect(typeof stream.next).toBe('function');
+      expect(typeof stream.return).toBe('function');
+      
+      // Get initial value
+      const firstValue = await stream.next();
+      expect(firstValue.done).toBe(false);
+      expect(firstValue.value).toHaveLength(1);
+      expect(firstValue.value![0].frontmatter.title).toBe('Open Task');
+      
+      // Clean up
+      await stream.return?.();
+    });
+
+    it('should filter by status in stream', async () => {
+      await taskManager.createTask({
+        title: 'Open Task',
+        description: 'An open task',
+      });
+
+      await taskManager.createTask({
+        title: 'Assigned Task',
+        description: 'An assigned task',
         assignee: 'john.doe',
       });
 
-      await taskManager.createTask({
-        title: 'Task 2',
-        description: 'Task for Jane',
-        assignee: 'jane.doe',
-      });
-
-      const johnsTasks = await taskManager.listTasks({ assignee: 'john.doe' });
-      expect(johnsTasks).toHaveLength(1);
-      expect(johnsTasks[0].frontmatter.title).toBe('Task 1');
-    });
-
-    it('should filter tasks by subtask presence', async () => {
-      await taskManager.createTask({
-        title: 'Simple Task',
-        description: 'No subtasks',
-      });
-
-      await taskManager.createTask({
-        title: 'Complex Task',
-        description: 'With subtasks',
-        subtasks: [{ title: 'Subtask', description: 'A subtask' }],
-      });
-
-      const withSubtasks = await taskManager.listTasks({ hasSubtasks: true });
-      const withoutSubtasks = await taskManager.listTasks({ hasSubtasks: false });
-
-      expect(withSubtasks).toHaveLength(1);
-      expect(withoutSubtasks).toHaveLength(1);
+      const stream = taskManager.listTaskStream({ status: 'open' });
+      const firstValue = await stream.next();
+      
+      expect(firstValue.done).toBe(false);
+      expect(firstValue.value).toHaveLength(1);
+      expect(firstValue.value![0].frontmatter.title).toBe('Open Task');
+      
+      // Clean up
+      await stream.return?.();
     });
   });
 

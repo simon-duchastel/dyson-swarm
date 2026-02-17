@@ -1,5 +1,5 @@
 import lock from 'proper-lockfile';
-import { promises as fs } from 'fs';
+import { promises as fs, watchFile, unwatchFile, Stats } from 'fs';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import type { Task, TaskStatus, CreateTaskOptions, UpdateTaskOptions, TaskFilter, TaskManagerOptions } from './types.js';
@@ -14,6 +14,7 @@ import {
   getSubtasksDir,
   getSubtaskDir,
   getSubtaskFile,
+  getStatusesDir,
 } from '../paths.js';
 
 export class TaskManager {
@@ -244,17 +245,6 @@ export class TaskManager {
           
           const task = await this.loadTaskFromFile(taskId);
           if (task) {
-            // Apply filters
-            if (filter.assignee && task.frontmatter.assignee !== filter.assignee) {
-              continue;
-            }
-            if (filter.hasSubtasks !== undefined) {
-              const hasSubtasks = task.subtasks && task.subtasks.length > 0;
-              if (filter.hasSubtasks !== hasSubtasks) {
-                continue;
-              }
-            }
-            
             tasks.push(task);
           }
         }
@@ -262,6 +252,61 @@ export class TaskManager {
 
       return tasks;
     });
+  }
+
+  /**
+   * List tasks with streaming updates when status files change
+   * Returns an async generator that yields updated task lists
+   */
+  async *listTaskStream(filter: TaskFilter = {}): AsyncGenerator<Task[], void, unknown> {
+    const statuses: TaskStatus[] = filter.status ? [filter.status] : ['draft', 'open', 'in-progress', 'closed'];
+    const statusesDir = getStatusesDir(this.cwdProvider);
+    const statusFiles = statuses.map(status => `${statusesDir}/${status}`);
+    
+    // Ensure all status files exist before watching
+    for (const file of statusFiles) {
+      if (!(await TaskFileUtils.fileExists(file))) {
+        await TaskFileUtils.ensureDir(statusesDir);
+        await fs.writeFile(file, '', 'utf-8');
+      }
+    }
+    
+    // Initial load
+    yield await this.listTasks(filter);
+    
+    // Set up file watchers using fs.watchFile
+    const watchers = new Set<string>();
+    let changeResolve: (() => void) | null = null;
+    
+    const onFileChange = (curr: Stats, prev: Stats) => {
+      if (curr.mtime !== prev.mtime && changeResolve) {
+        changeResolve();
+        changeResolve = null;
+      }
+    };
+    
+    try {
+      // Start watching all status files
+      for (const file of statusFiles) {
+        watchFile(file, { interval: 100 }, onFileChange);
+        watchers.add(file);
+      }
+      
+      while (true) {
+        // Wait for any file change
+        await new Promise<void>((resolve) => {
+          changeResolve = resolve;
+        });
+        
+        // Yield updated task list
+        yield await this.listTasks(filter);
+      }
+    } finally {
+      // Clean up all watchers
+      for (const file of watchers) {
+        unwatchFile(file, onFileChange);
+      }
+    }
   }
 
   /**
