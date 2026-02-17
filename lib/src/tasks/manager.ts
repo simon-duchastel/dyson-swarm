@@ -63,7 +63,10 @@ export class TaskManager {
    * Load a task from its file
    */
   private async loadTaskFromFile(taskId: string): Promise<Task | null> {
-    const taskFile = getTaskFile(taskId, this.cwdProvider);
+    // Use appropriate file getter for subtasks vs main tasks
+    const taskFile = taskId.includes('/') 
+      ? getSubtaskFile(taskId, this.cwdProvider)
+      : getTaskFile(taskId, this.cwdProvider);
     
     if (!(await TaskFileUtils.fileExists(taskFile))) {
       return null;
@@ -213,22 +216,53 @@ export class TaskManager {
   }
 
   /**
+   * Recursively collect all subtasks for a given task
+   */
+  private async collectAllSubtasks(parentId: string): Promise<Task[]> {
+    const allSubtasks: Task[] = [];
+    const directSubtasks = await this.loadSubtasks(parentId);
+    
+    for (const subtask of directSubtasks) {
+      allSubtasks.push(subtask);
+      // Recursively get nested subtasks
+      const nestedSubtasks = await this.collectAllSubtasks(subtask.id);
+      allSubtasks.push(...nestedSubtasks);
+    }
+    
+    return allSubtasks;
+  }
+
+  /**
    * List tasks with optional filtering
    */
   async listTasks(filter: TaskFilter = {}): Promise<Task[]> {
     return this.withLock(async () => {
       const tasks: Task[] = [];
+      
+      // If taskId filter is specified, get that task and all its subtasks
+      if (filter.taskId) {
+        const task = await this.loadTaskFromFile(filter.taskId);
+        if (task) {
+          tasks.push(task);
+          // Recursively collect all subtasks
+          const subtasks = await this.collectAllSubtasks(filter.taskId);
+          tasks.push(...subtasks);
+        }
+        
+        // Apply status filter if specified
+        if (filter.status) {
+          return tasks.filter(t => t.status === filter.status);
+        }
+        
+        return tasks;
+      }
+      
       const statuses: TaskStatus[] = filter.status ? [filter.status] : ['draft', 'open', 'in-progress', 'closed'];
 
       for (const status of statuses) {
         const taskIds = await StatusUtils.readStatusFile(status, this.cwdProvider);
 
         for (const taskId of taskIds) {
-          // Skip subtasks in main listing (they have / in ID)
-          if (taskId.includes('/')) {
-            continue;
-          }
-          
           const task = await this.loadTaskFromFile(taskId);
           if (task) {
             tasks.push(task);
