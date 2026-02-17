@@ -20,16 +20,6 @@ export async function getAction(taskId: string) {
     }
     console.log(`\nDescription:`);
     console.log(task.description);
-
-    if (task.subtasks && task.subtasks.length > 0) {
-      console.log(`\nSubtasks:`);
-      for (const subtask of task.subtasks) {
-        console.log(`  - ${subtask.frontmatter.title} (${subtask.status})`);
-        if (subtask.description) {
-          console.log(`    ${subtask.description}`);
-        }
-      }
-    }
   } catch (error) {
     console.error("Failed to get task:", error instanceof Error ? error.message : error);
     process.exit(1);

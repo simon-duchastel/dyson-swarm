@@ -34,9 +34,6 @@ describe('get command', () => {
       frontmatter: { title: 'Test Task', assignee: 'john.doe' },
       status: 'in-progress',
       description: 'Task description',
-      subtasks: [
-        { frontmatter: { title: 'Subtask 1' }, status: 'open', description: 'Subtask desc' },
-      ],
     };
     mockGetTask.mockResolvedValue(mockTask);
 
@@ -49,23 +46,9 @@ describe('get command', () => {
     expect(mockConsoleLog).toHaveBeenCalledWith('Assignee: john.doe');
     expect(mockConsoleLog).toHaveBeenCalledWith('\nDescription:');
     expect(mockConsoleLog).toHaveBeenCalledWith('Task description');
-    expect(mockConsoleLog).toHaveBeenCalledWith('\nSubtasks:');
   });
 
-  it('should handle task without subtasks', async () => {
-    const mockTask = {
-      id: 'task-1',
-      frontmatter: { title: 'Simple Task' },
-      status: 'open',
-      description: 'Simple description',
-    };
-    mockGetTask.mockResolvedValue(mockTask);
 
-    await getAction('task-1');
-
-    expect(mockConsoleLog).toHaveBeenCalledWith('ID: task-1');
-    expect(mockConsoleLog).toHaveBeenCalledWith('Title: Simple Task');
-  });
 
   it('should handle task not found', async () => {
     mockGetTask.mockResolvedValue(null);

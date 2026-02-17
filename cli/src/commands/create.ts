@@ -3,17 +3,13 @@ import { TaskManager } from "dyson-swarm";
 
 export async function createAction(options: any) {
   const taskManager = new TaskManager();
-  const subtasks = options.subtasks?.map((title: string) => ({
-    title,
-    description: "",
-  }));
 
   try {
     const task = await taskManager.createTask({
       title: options.title,
       description: options.description,
       assignee: options.assignee,
-      subtasks,
+      parentTaskId: options.parent,
     });
 
     console.log(`Created task: ${task.id}`);
@@ -22,8 +18,8 @@ export async function createAction(options: any) {
     if (task.frontmatter.assignee) {
       console.log(`Assignee: ${task.frontmatter.assignee}`);
     }
-    if (task.subtasks && task.subtasks.length > 0) {
-      console.log(`Subtasks: ${task.subtasks.length}`);
+    if (options.parent) {
+      console.log(`Parent: ${options.parent}`);
     }
   } catch (error) {
     console.error("Failed to create task:", error instanceof Error ? error.message : error);
@@ -36,5 +32,5 @@ export const createCommand: any = new Command()
   .option("-t, --title <title>", "Task title.", { required: true })
   .option("-d, --description <description>", "Task description.", { required: true })
   .option("-a, --assignee <assignee>", "Assignee username.")
-  .option("-s, --subtasks <subtasks...>", "Subtask titles, can be specified multiple times.")
+  .option("-p, --parent <parentTaskId>", "Parent task ID to create a subtask.")
   .action(createAction);

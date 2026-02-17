@@ -33,7 +33,6 @@ describe('create command', () => {
       id: 'test-task-id',
       frontmatter: { title: 'Test Task' },
       status: 'open',
-      subtasks: [],
     };
     mockCreateTask.mockResolvedValue(mockTask);
 
@@ -46,7 +45,7 @@ describe('create command', () => {
       title: 'Test Task',
       description: 'Test Description',
       assignee: undefined,
-      subtasks: undefined,
+      parentTaskId: undefined,
     });
     expect(mockConsoleLog).toHaveBeenCalledWith('Created task: test-task-id');
     expect(mockConsoleLog).toHaveBeenCalledWith('Title: Test Task');
@@ -58,7 +57,6 @@ describe('create command', () => {
       id: 'test-task-id',
       frontmatter: { title: 'Test Task', assignee: 'john.doe' },
       status: 'in-progress',
-      subtasks: [],
     };
     mockCreateTask.mockResolvedValue(mockTask);
 
@@ -72,36 +70,33 @@ describe('create command', () => {
       title: 'Test Task',
       description: 'Test Description',
       assignee: 'john.doe',
-      subtasks: undefined,
+      parentTaskId: undefined,
     });
     expect(mockConsoleLog).toHaveBeenCalledWith('Assignee: john.doe');
   });
 
-  it('should create a task with subtasks', async () => {
+  it('should create a subtask with parent', async () => {
     const mockTask = {
-      id: 'test-task-id',
-      frontmatter: { title: 'Test Task' },
+      id: 'parent-id/subtask-id',
+      frontmatter: { title: 'Subtask' },
       status: 'open',
-      subtasks: [{ frontmatter: { title: 'Subtask 1' } }, { frontmatter: { title: 'Subtask 2' } }],
     };
     mockCreateTask.mockResolvedValue(mockTask);
 
     await createAction({
-      title: 'Test Task',
+      title: 'Subtask',
       description: 'Test Description',
-      subtasks: ['Subtask 1', 'Subtask 2'],
+      parent: 'parent-id',
     });
 
     expect(mockCreateTask).toHaveBeenCalledWith({
-      title: 'Test Task',
+      title: 'Subtask',
       description: 'Test Description',
       assignee: undefined,
-      subtasks: [
-        { title: 'Subtask 1', description: '' },
-        { title: 'Subtask 2', description: '' },
-      ],
+      parentTaskId: 'parent-id',
     });
-    expect(mockConsoleLog).toHaveBeenCalledWith('Subtasks: 2');
+    expect(mockConsoleLog).toHaveBeenCalledWith('Created task: parent-id/subtask-id');
+    expect(mockConsoleLog).toHaveBeenCalledWith('Parent: parent-id');
   });
 
   it('should handle errors', async () => {
