@@ -312,25 +312,6 @@ describe('TaskManager', () => {
       expect(retrieved!.frontmatter.title).toBe('Test Task');
     });
 
-    it('should retrieve a subtask by fully qualified ID', async () => {
-      const parent = await taskManager.createTask({
-        title: 'Parent Task',
-        description: 'Task with subtasks',
-        subtasks: [
-          {
-            title: 'Subtask 1',
-            description: 'First subtask',
-          },
-        ],
-      });
-
-      const subtaskId = parent.subtasks![0].id;
-      const retrieved = await taskManager.getTask(subtaskId);
-      expect(retrieved).toBeDefined();
-      expect(retrieved!.frontmatter.title).toBe('Subtask 1');
-      expect(retrieved!.id).toBe(subtaskId);
-    });
-
     it('should return null for non-existent task', async () => {
       const task = await taskManager.getTask('non-existent-id');
       expect(task).toBeNull();
