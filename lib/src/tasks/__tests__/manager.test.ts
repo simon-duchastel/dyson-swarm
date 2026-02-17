@@ -455,6 +455,109 @@ describe('TaskManager', () => {
       expect(taskIds).toContain(subtask.id);
     });
 
+    it('should filter by taskId and include subtasks', async () => {
+      const parent = await taskManager.createTask({
+        title: 'Parent Task',
+        description: 'Main task',
+      });
+
+      const subtask1 = await taskManager.createTask({
+        title: 'Subtask 1',
+        description: 'First subtask',
+        parentTaskId: parent.id,
+      });
+
+      const subtask2 = await taskManager.createTask({
+        title: 'Subtask 2',
+        description: 'Second subtask',
+        parentTaskId: parent.id,
+      });
+
+      // Create another unrelated task
+      await taskManager.createTask({
+        title: 'Other Task',
+        description: 'Unrelated task',
+      });
+
+      // Filter by parent taskId
+      const tasks = await taskManager.listTasks({ taskId: parent.id });
+      
+      // Should include parent and both subtasks, but not the other task
+      expect(tasks).toHaveLength(3);
+      
+      const taskIds = tasks.map(t => t.id);
+      expect(taskIds).toContain(parent.id);
+      expect(taskIds).toContain(subtask1.id);
+      expect(taskIds).toContain(subtask2.id);
+    });
+
+    it('should filter by taskId with deeply nested subtasks', async () => {
+      const level1 = await taskManager.createTask({
+        title: 'Level 1 Task',
+        description: 'Top level',
+      });
+
+      const level2 = await taskManager.createTask({
+        title: 'Level 2 Subtask',
+        description: 'Nested one level',
+        parentTaskId: level1.id,
+      });
+
+      const level3 = await taskManager.createTask({
+        title: 'Level 3 Subtask',
+        description: 'Nested two levels',
+        parentTaskId: level2.id,
+      });
+
+      const level4 = await taskManager.createTask({
+        title: 'Level 4 Subtask',
+        description: 'Nested three levels',
+        parentTaskId: level3.id,
+      });
+
+      // Filter by the top-level task
+      const tasks = await taskManager.listTasks({ taskId: level1.id });
+      
+      // Should include all 4 tasks
+      expect(tasks).toHaveLength(4);
+      
+      const taskIds = tasks.map(t => t.id);
+      expect(taskIds).toContain(level1.id);
+      expect(taskIds).toContain(level2.id);
+      expect(taskIds).toContain(level3.id);
+      expect(taskIds).toContain(level4.id);
+    });
+
+    it('should filter by taskId and status together', async () => {
+      const parent = await taskManager.createTask({
+        title: 'Parent Task',
+        description: 'Main task',
+      });
+
+      const subtask = await taskManager.createTask({
+        title: 'Subtask',
+        description: 'A subtask',
+        parentTaskId: parent.id,
+      });
+
+      // Change subtask status to closed
+      await taskManager.changeTaskStatus(subtask.id, 'closed');
+
+      // Filter by parent taskId and open status
+      const tasks = await taskManager.listTasks({ taskId: parent.id, status: 'open' });
+      
+      // Should only include the parent (open), not the subtask (closed)
+      expect(tasks).toHaveLength(1);
+      expect(tasks[0].id).toBe(parent.id);
+      expect(tasks[0].status).toBe('open');
+    });
+
+    it('should return empty array for non-existent taskId', async () => {
+      const tasks = await taskManager.listTasks({ taskId: 'non-existent-id' });
+      
+      expect(tasks).toHaveLength(0);
+    });
+
   });
 
   describe('listTaskStream', () => {
