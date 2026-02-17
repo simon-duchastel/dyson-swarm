@@ -216,7 +216,11 @@ Tasks are stored as markdown files with YAML frontmatter in `.swarm/tasks/`:
 
 ```
 .swarm/
-├── status.json          # Tracks current status of each task
+├── statuses/            # Tracks current status of each task
+│   ├── draft
+│   ├── open
+│   ├── in-progress
+│   └── closed
 └── tasks/
     └── {id}/
         └── {id}.task    # Task content
