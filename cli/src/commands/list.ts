@@ -19,10 +19,6 @@ export async function listAction(options: any) {
       filter.assignee = options.assignee;
     }
 
-    if (options.hasSubtasks !== undefined) {
-      filter.hasSubtasks = options.hasSubtasks;
-    }
-
     const tasks = await taskManager.listTasks(filter);
 
     if (tasks.length === 0) {
@@ -39,9 +35,6 @@ export async function listAction(options: any) {
       if (task.frontmatter.assignee) {
         console.log(`Assignee: ${task.frontmatter.assignee}`);
       }
-      if (task.subtasks && task.subtasks.length > 0) {
-        console.log(`Subtasks: ${task.subtasks.length}`);
-      }
       console.log("---");
     }
   } catch (error) {
@@ -54,6 +47,4 @@ export const listCommand: any = new Command()
   .description("List tasks with optional filters.")
   .option("-s, --status <status>", "Filter by status (open, in-progress, closed).")
   .option("-a, --assignee <assignee>", "Filter by assignee.")
-  .option("--has-subtasks", "Filter tasks that have subtasks.")
-  .option("--no-subtasks", "Filter tasks that have no subtasks.")
   .action(listAction);
