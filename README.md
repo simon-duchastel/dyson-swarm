@@ -222,12 +222,4 @@ Tasks are stored as markdown files with YAML frontmatter in `.swarm/tasks/`:
         └── {id}.task    # Task content
 ```
 
-## Schema Versioning
 
-This project uses schema versioning to manage changes to the storage format. The current schema is version 2.
-
-### Schema v2 Changes
-
-- **Flat task structure**: All tasks stored in a flat directory hierarchy
-- **Status tracking**: Task status stored in `status.json` file instead of directory structure
-- **Infinitely nested subtasks**: Subtasks use `parentTaskId` reference instead of nested files
