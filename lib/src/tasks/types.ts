@@ -10,17 +10,13 @@ export interface Task {
   frontmatter: TaskFrontmatter;
   description: string;
   status: TaskStatus;
-  subtasks?: Task[]; // Only one level deep
 }
 
 export interface CreateTaskOptions {
   title: string;
   description: string;
   assignee?: string;
-  subtasks?: Array<{
-    title: string;
-    description: string;
-  }>;
+  parentTaskId?: string;
 }
 
 export interface UpdateTaskOptions {
