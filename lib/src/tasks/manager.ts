@@ -224,11 +224,6 @@ export class TaskManager {
         const taskIds = await StatusUtils.readStatusFile(status, this.cwdProvider);
 
         for (const taskId of taskIds) {
-          // Skip subtasks in main listing (they have / in ID)
-          if (taskId.includes('/')) {
-            continue;
-          }
-          
           const task = await this.loadTaskFromFile(taskId);
           if (task) {
             tasks.push(task);
