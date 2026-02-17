@@ -31,8 +31,6 @@ export interface UpdateTaskOptions {
 
 export interface TaskFilter {
   status?: TaskStatus;
-  assignee?: string;
-  hasSubtasks?: boolean;
 }
 
 export interface TaskManagerOptions {
