@@ -38,10 +38,12 @@ After installation, use the `swarm` command (if `dyson-swarm-cli` was installed)
 # Create a task
 swarm create -t "Fix bug" -d "Login not working"
 
-# List tasks (filter by status, assignee, subtasks)
+# Create a subtask (infinitely nestable)
+swarm create -t "Subtask" -d "Part of parent" --parent <parentTaskId>
+
+# List tasks (filter by status, assignee)
 swarm list --status open
 swarm list --assignee john
-swarm list --has-subtasks
 
 # Get a specific task
 swarm get <taskId>
@@ -105,14 +107,11 @@ const assigned = await tm.createTask({
   assignee: 'john'
 });
 
-// Task with subtasks
-const withSubtasks = await tm.createTask({
-  title: 'User auth',
-  description: 'Add authentication',
-  subtasks: [
-    { title: 'Login UI', description: 'Design login form' },
-    { title: 'JWT tokens', description: 'Add token auth' }
-  ]
+// Subtask (infinitely nestable)
+const subtask = await tm.createTask({
+  title: 'Login UI',
+  description: 'Design login form',
+  parentTaskId: 'parent-task-id'
 });
 ```
 
@@ -122,7 +121,7 @@ Get a task by ID. Returns the task or null if not found.
 
 ```javascript
 const task = await tm.getTask('abc-123');
-console.log(task.title, task.status, task.subtasks);
+console.log(task.title, task.status);
 ```
 
 #### listTasks(filter)
@@ -141,9 +140,18 @@ const closed = await tm.listTasks({ status: 'closed' });
 // Filter by assignee
 const mine = await tm.listTasks({ assignee: 'john' });
 
-// Filter by subtasks
-const withSubtasks = await tm.listTasks({ hasSubtasks: true });
-const withoutSubtasks = await tm.listTasks({ hasSubtasks: false });
+// List subtasks of a parent
+const children = await tm.listTasks({ parentTaskId: 'abc-123' });
+```
+
+#### listTaskStream(options)
+
+Stream tasks as they are found, useful for large task lists.
+
+```javascript
+for await (const task of tm.listTaskStream()) {
+  console.log(task.title);
+}
 ```
 
 #### updateTask(taskId, options)
@@ -203,7 +211,7 @@ await tm.deleteTask('abc-123');
   frontmatter: { title: string; assignee?: string };
   description: string;
   status: 'open' | 'in-progress' | 'closed';
-  subtasks?: Task[];
+  parentTaskId?: string;
 }
 ```
 
@@ -212,11 +220,11 @@ await tm.deleteTask('abc-123');
 Tasks are stored as markdown files with YAML frontmatter in `.swarm/tasks/`:
 
 ```
-.swarm/tasks/
-├── open/{id}/{id}.task
-├── in-progress/{id}/{id}.task
-│   └── sub-tasks/{status}/
-└── closed/{id}/{id}.task
+.swarm/
+├── status.json          # Tracks current status of each task
+└── tasks/
+    └── {id}/
+        └── {id}.task    # Task content
 ```
 
 Task file format:
@@ -228,3 +236,14 @@ assignee: "john.doe"
 ---
 Users cannot log in with correct credentials.
 ```
+
+## Schema Versioning
+
+This project uses schema versioning to manage changes to the storage format. The current schema is version 2.
+
+### Schema v2 Changes
+
+- **Flat task structure**: All tasks stored in a flat directory hierarchy
+- **Status tracking**: Task status stored in `status.json` file instead of directory structure
+- **Infinitely nested subtasks**: Subtasks use `parentTaskId` reference instead of nested files
+- **Parent-child relationships**: Query subtasks by filtering on `parentTaskId`
