@@ -38,7 +38,7 @@ After installation, use the `swarm` command (if `dyson-swarm-cli` was installed)
 # Create a task
 swarm create -t "Fix bug" -d "Login not working"
 
-# Create a subtask (infinitely nestable)
+# Create a subtask
 swarm create -t "Subtask" -d "Part of parent" --parent <parentTaskId>
 
 # List tasks (filter by status, assignee)
@@ -107,7 +107,7 @@ const assigned = await tm.createTask({
   assignee: 'john'
 });
 
-// Subtask (infinitely nestable)
+// Subtask
 const subtask = await tm.createTask({
   title: 'Login UI',
   description: 'Design login form',
@@ -137,11 +137,7 @@ const open = await tm.listTasks({ status: 'open' });
 const inProgress = await tm.listTasks({ status: 'in-progress' });
 const closed = await tm.listTasks({ status: 'closed' });
 
-// Filter by assignee
-const mine = await tm.listTasks({ assignee: 'john' });
 
-// List subtasks of a parent
-const children = await tm.listTasks({ parentTaskId: 'abc-123' });
 ```
 
 #### listTaskStream(options)
@@ -211,7 +207,6 @@ await tm.deleteTask('abc-123');
   frontmatter: { title: string; assignee?: string };
   description: string;
   status: 'open' | 'in-progress' | 'closed';
-  parentTaskId?: string;
 }
 ```
 
@@ -227,16 +222,6 @@ Tasks are stored as markdown files with YAML frontmatter in `.swarm/tasks/`:
         └── {id}.task    # Task content
 ```
 
-Task file format:
-
-```yaml
----
-title: "Fix login bug"
-assignee: "john.doe"
----
-Users cannot log in with correct credentials.
-```
-
 ## Schema Versioning
 
 This project uses schema versioning to manage changes to the storage format. The current schema is version 2.
@@ -246,4 +231,3 @@ This project uses schema versioning to manage changes to the storage format. The
 - **Flat task structure**: All tasks stored in a flat directory hierarchy
 - **Status tracking**: Task status stored in `status.json` file instead of directory structure
 - **Infinitely nested subtasks**: Subtasks use `parentTaskId` reference instead of nested files
-- **Parent-child relationships**: Query subtasks by filtering on `parentTaskId`
