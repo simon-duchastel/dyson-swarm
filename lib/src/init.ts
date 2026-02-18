@@ -5,6 +5,19 @@ import { CURRENT_SCHEMA_VERSION, getVersionFilePath } from './tasks/schema-versi
 import type { TaskStatus } from './tasks/types.js';
 
 /**
+ * Error thrown when the directory is not initialized for dyson-swarm
+ */
+export class NotInitializedError extends Error {
+  constructor(
+    message: string = 'This directory is not initialized for dyson-swarm. Run "swarm init" to initialize.',
+    public missingComponents: string[] = []
+  ) {
+    super(message);
+    this.name = 'NotInitializedError';
+  }
+}
+
+/**
  * Check if the current directory is initialized for dyson-swarm
  * Returns an object with isInitialized flag and missingComponents list
  */

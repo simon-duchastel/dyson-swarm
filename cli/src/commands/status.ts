@@ -1,9 +1,7 @@
 import { Command } from "@cliffy/command";
-import { TaskManager } from "dyson-swarm";
-import { requireInitialization } from "../utils/init-check.js";
+import { TaskManager, NotInitializedError } from "dyson-swarm";
 
 export async function statusAction(taskId: string, status: string) {
-  await requireInitialization();
   const taskManager = new TaskManager();
 
   if (!["open", "in-progress", "closed"].includes(status)) {
@@ -22,6 +20,10 @@ export async function statusAction(taskId: string, status: string) {
     console.log(`Changed status of task ${task.id} to: ${task.status}`);
     console.log(`Title: ${task.frontmatter.title}`);
   } catch (error) {
+    if (error instanceof NotInitializedError) {
+      console.error("Error:", error.message);
+      process.exit(1);
+    }
     console.error("Failed to change task status:", error instanceof Error ? error.message : error);
     process.exit(1);
   }

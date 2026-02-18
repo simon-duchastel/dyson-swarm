@@ -3,12 +3,11 @@ import { listAction } from '../list.js';
 
 // Mock the TaskManager
 const mocks = vi.hoisted(() => ({
-  checkInitialization: vi.fn().mockResolvedValue({ isInitialized: true, missingComponents: [] }),
   listTasks: vi.fn(),
 }));
 
 vi.mock("dyson-swarm", () => ({
-  checkInitialization: mocks.checkInitialization,
+  NotInitializedError: class NotInitializedError extends Error {},
   TaskManager: vi.fn().mockImplementation(function() {
     return {
       listTasks: mocks.listTasks,
