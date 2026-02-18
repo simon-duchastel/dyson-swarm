@@ -2,17 +2,19 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { updateAction } from '../update.js';
 
 // Mock the TaskManager
-const mockUpdateTask = vi.fn();
+const mocks = vi.hoisted(() => ({
+  checkInitialization: vi.fn().mockResolvedValue({ isInitialized: true, missingComponents: [] }),
+  updateTask: vi.fn(),
+}));
 
-vi.mock("dyson-swarm", function() {
-  return {
-    TaskManager: vi.fn().mockImplementation(function() {
-      return {
-        updateTask: mockUpdateTask,
-      };
-    }),
-  };
-});
+vi.mock("dyson-swarm", () => ({
+  checkInitialization: mocks.checkInitialization,
+  TaskManager: vi.fn().mockImplementation(function() {
+    return {
+      updateTask: mocks.updateTask,
+    };
+  }),
+}));
 
 // Mock console
 const mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -34,11 +36,11 @@ describe('update command', () => {
       frontmatter: { title: 'New Title' },
       status: 'open',
     };
-    mockUpdateTask.mockResolvedValue(mockTask);
+    mocks.updateTask.mockResolvedValue(mockTask);
 
     await updateAction('task-1', { title: 'New Title' });
 
-    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { title: 'New Title' });
+    expect(mocks.updateTask).toHaveBeenCalledWith('task-1', { title: 'New Title' });
     expect(mockConsoleLog).toHaveBeenCalledWith('Updated task: task-1');
     expect(mockConsoleLog).toHaveBeenCalledWith('Title: New Title');
   });
@@ -50,11 +52,11 @@ describe('update command', () => {
       status: 'open',
       description: 'New description',
     };
-    mockUpdateTask.mockResolvedValue(mockTask);
+    mocks.updateTask.mockResolvedValue(mockTask);
 
     await updateAction('task-1', { description: 'New description' });
 
-    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { description: 'New description' });
+    expect(mocks.updateTask).toHaveBeenCalledWith('task-1', { description: 'New description' });
   });
 
   it('should update task assignee', async () => {
@@ -63,11 +65,11 @@ describe('update command', () => {
       frontmatter: { title: 'Task', assignee: 'jane.doe' },
       status: 'in-progress',
     };
-    mockUpdateTask.mockResolvedValue(mockTask);
+    mocks.updateTask.mockResolvedValue(mockTask);
 
     await updateAction('task-1', { assignee: 'jane.doe' });
 
-    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { assignee: 'jane.doe' });
+    expect(mocks.updateTask).toHaveBeenCalledWith('task-1', { assignee: 'jane.doe' });
     expect(mockConsoleLog).toHaveBeenCalledWith('Assignee: jane.doe');
   });
 
@@ -78,11 +80,11 @@ describe('update command', () => {
       status: 'in-progress',
       description: 'New description',
     };
-    mockUpdateTask.mockResolvedValue(mockTask);
+    mocks.updateTask.mockResolvedValue(mockTask);
 
     await updateAction('task-1', { title: 'New Title', description: 'New description', assignee: 'john.doe' });
 
-    expect(mockUpdateTask).toHaveBeenCalledWith('task-1', {
+    expect(mocks.updateTask).toHaveBeenCalledWith('task-1', {
       title: 'New Title',
       description: 'New description',
       assignee: 'john.doe',
@@ -97,7 +99,7 @@ describe('update command', () => {
   });
 
   it('should handle task not found', async () => {
-    mockUpdateTask.mockResolvedValue(null);
+    mocks.updateTask.mockResolvedValue(null);
 
     await expect(updateAction('task-1', { title: 'New Title' })).rejects.toThrow('process.exit called');
 
@@ -106,7 +108,7 @@ describe('update command', () => {
   });
 
   it('should handle errors', async () => {
-    mockUpdateTask.mockRejectedValue(new Error('Database error'));
+    mocks.updateTask.mockRejectedValue(new Error('Database error'));
 
     await expect(updateAction('task-1', { title: 'New Title' })).rejects.toThrow('process.exit called');
 

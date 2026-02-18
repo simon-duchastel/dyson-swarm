@@ -2,17 +2,19 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { assignAction } from '../assign.js';
 
 // Mock the TaskManager
-const mockAssignTask = vi.fn();
+const mocks = vi.hoisted(() => ({
+  checkInitialization: vi.fn().mockResolvedValue({ isInitialized: true, missingComponents: [] }),
+  assignTask: vi.fn(),
+}));
 
-vi.mock("dyson-swarm", function() {
-  return {
-    TaskManager: vi.fn().mockImplementation(function() {
-      return {
-        assignTask: mockAssignTask,
-      };
-    }),
-  };
-});
+vi.mock("dyson-swarm", () => ({
+  checkInitialization: mocks.checkInitialization,
+  TaskManager: vi.fn().mockImplementation(function() {
+    return {
+      assignTask: mocks.assignTask,
+    };
+  }),
+}));
 
 // Mock console
 const mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -34,18 +36,18 @@ describe('assign command', () => {
       frontmatter: { title: 'Test Task', assignee: 'john.doe' },
       status: 'in-progress',
     };
-    mockAssignTask.mockResolvedValue(mockTask);
+    mocks.assignTask.mockResolvedValue(mockTask);
 
     await assignAction('task-1', 'john.doe');
 
-    expect(mockAssignTask).toHaveBeenCalledWith('task-1', 'john.doe');
+    expect(mocks.assignTask).toHaveBeenCalledWith('task-1', 'john.doe');
     expect(mockConsoleLog).toHaveBeenCalledWith('Assigned task task-1 to: john.doe');
     expect(mockConsoleLog).toHaveBeenCalledWith('Title: Test Task');
     expect(mockConsoleLog).toHaveBeenCalledWith('Status: in-progress');
   });
 
   it('should handle task not found', async () => {
-    mockAssignTask.mockResolvedValue(null);
+    mocks.assignTask.mockResolvedValue(null);
 
     await expect(assignAction('task-1', 'john.doe')).rejects.toThrow('process.exit called');
 
@@ -54,7 +56,7 @@ describe('assign command', () => {
   });
 
   it('should handle errors', async () => {
-    mockAssignTask.mockRejectedValue(new Error('Database error'));
+    mocks.assignTask.mockRejectedValue(new Error('Database error'));
 
     await expect(assignAction('task-1', 'john.doe')).rejects.toThrow('process.exit called');
 

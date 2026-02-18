@@ -1,7 +1,9 @@
 import { Command } from "@cliffy/command";
 import { TaskManager } from "dyson-swarm";
+import { requireInitialization } from "../utils/init-check.js";
 
 export async function deleteAction(taskId: string, options: any) {
+  await requireInitialization();
   const taskManager = new TaskManager();
 
   if (!options.force) {

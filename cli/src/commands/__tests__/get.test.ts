@@ -2,17 +2,19 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getAction } from '../get.js';
 
 // Mock the TaskManager
-const mockGetTask = vi.fn();
+const mocks = vi.hoisted(() => ({
+  checkInitialization: vi.fn().mockResolvedValue({ isInitialized: true, missingComponents: [] }),
+  getTask: vi.fn(),
+}));
 
-vi.mock("dyson-swarm", function() {
-  return {
-    TaskManager: vi.fn().mockImplementation(function() {
-      return {
-        getTask: mockGetTask,
-      };
-    }),
-  };
-});
+vi.mock("dyson-swarm", () => ({
+  checkInitialization: mocks.checkInitialization,
+  TaskManager: vi.fn().mockImplementation(function() {
+    return {
+      getTask: mocks.getTask,
+    };
+  }),
+}));
 
 // Mock console
 const mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -35,11 +37,11 @@ describe('get command', () => {
       status: 'in-progress',
       description: 'Task description',
     };
-    mockGetTask.mockResolvedValue(mockTask);
+    mocks.getTask.mockResolvedValue(mockTask);
 
     await getAction('task-1');
 
-    expect(mockGetTask).toHaveBeenCalledWith('task-1');
+    expect(mocks.getTask).toHaveBeenCalledWith('task-1');
     expect(mockConsoleLog).toHaveBeenCalledWith('ID: task-1');
     expect(mockConsoleLog).toHaveBeenCalledWith('Title: Test Task');
     expect(mockConsoleLog).toHaveBeenCalledWith('Status: in-progress');
@@ -51,7 +53,7 @@ describe('get command', () => {
 
 
   it('should handle task not found', async () => {
-    mockGetTask.mockResolvedValue(null);
+    mocks.getTask.mockResolvedValue(null);
 
     await expect(getAction('non-existent')).rejects.toThrow('process.exit called');
 
@@ -60,7 +62,7 @@ describe('get command', () => {
   });
 
   it('should handle errors', async () => {
-    mockGetTask.mockRejectedValue(new Error('Database error'));
+    mocks.getTask.mockRejectedValue(new Error('Database error'));
 
     await expect(getAction('task-1')).rejects.toThrow('process.exit called');
 

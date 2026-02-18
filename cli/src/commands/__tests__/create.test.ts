@@ -2,17 +2,19 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createAction } from '../create.js';
 
 // Mock the TaskManager
-const mockCreateTask = vi.fn();
+const mocks = vi.hoisted(() => ({
+  checkInitialization: vi.fn().mockResolvedValue({ isInitialized: true, missingComponents: [] }),
+  createTask: vi.fn(),
+}));
 
-vi.mock("dyson-swarm", function() {
-  return {
-    TaskManager: vi.fn().mockImplementation(function() {
-      return {
-        createTask: mockCreateTask,
-      };
-    }),
-  };
-});
+vi.mock("dyson-swarm", () => ({
+  checkInitialization: mocks.checkInitialization,
+  TaskManager: vi.fn().mockImplementation(function() {
+    return {
+      createTask: mocks.createTask,
+    };
+  }),
+}));
 
 // Mock console
 const mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -34,14 +36,14 @@ describe('create command', () => {
       frontmatter: { title: 'Test Task' },
       status: 'open',
     };
-    mockCreateTask.mockResolvedValue(mockTask);
+    mocks.createTask.mockResolvedValue(mockTask);
 
     await createAction({
       title: 'Test Task',
       description: 'Test Description',
     });
 
-    expect(mockCreateTask).toHaveBeenCalledWith({
+    expect(mocks.createTask).toHaveBeenCalledWith({
       title: 'Test Task',
       description: 'Test Description',
       assignee: undefined,
@@ -58,7 +60,7 @@ describe('create command', () => {
       frontmatter: { title: 'Test Task', assignee: 'john.doe' },
       status: 'in-progress',
     };
-    mockCreateTask.mockResolvedValue(mockTask);
+    mocks.createTask.mockResolvedValue(mockTask);
 
     await createAction({
       title: 'Test Task',
@@ -66,7 +68,7 @@ describe('create command', () => {
       assignee: 'john.doe',
     });
 
-    expect(mockCreateTask).toHaveBeenCalledWith({
+    expect(mocks.createTask).toHaveBeenCalledWith({
       title: 'Test Task',
       description: 'Test Description',
       assignee: 'john.doe',
@@ -81,7 +83,7 @@ describe('create command', () => {
       frontmatter: { title: 'Subtask' },
       status: 'open',
     };
-    mockCreateTask.mockResolvedValue(mockTask);
+    mocks.createTask.mockResolvedValue(mockTask);
 
     await createAction({
       title: 'Subtask',
@@ -89,7 +91,7 @@ describe('create command', () => {
       parent: 'parent-id',
     });
 
-    expect(mockCreateTask).toHaveBeenCalledWith({
+    expect(mocks.createTask).toHaveBeenCalledWith({
       title: 'Subtask',
       description: 'Test Description',
       assignee: undefined,
@@ -100,7 +102,7 @@ describe('create command', () => {
   });
 
   it('should handle errors', async () => {
-    mockCreateTask.mockRejectedValue(new Error('Database error'));
+    mocks.createTask.mockRejectedValue(new Error('Database error'));
 
     await expect(createAction({
       title: 'Test Task',

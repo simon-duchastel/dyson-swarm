@@ -2,17 +2,19 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { deleteAction } from '../delete.js';
 
 // Mock the TaskManager
-const mockDeleteTask = vi.fn();
+const mocks = vi.hoisted(() => ({
+  checkInitialization: vi.fn().mockResolvedValue({ isInitialized: true, missingComponents: [] }),
+  deleteTask: vi.fn(),
+}));
 
-vi.mock("dyson-swarm", function() {
-  return {
-    TaskManager: vi.fn().mockImplementation(function() {
-      return {
-        deleteTask: mockDeleteTask,
-      };
-    }),
-  };
-});
+vi.mock("dyson-swarm", () => ({
+  checkInitialization: mocks.checkInitialization,
+  TaskManager: vi.fn().mockImplementation(function() {
+    return {
+      deleteTask: mocks.deleteTask,
+    };
+  }),
+}));
 
 // Mock console
 const mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -29,11 +31,11 @@ describe('delete command', () => {
   });
 
   it('should delete task with force flag', async () => {
-    mockDeleteTask.mockResolvedValue(true);
+    mocks.deleteTask.mockResolvedValue(true);
 
     await deleteAction('task-1', { force: true });
 
-    expect(mockDeleteTask).toHaveBeenCalledWith('task-1');
+    expect(mocks.deleteTask).toHaveBeenCalledWith('task-1');
     expect(mockConsoleLog).toHaveBeenCalledWith('Deleted task: task-1');
   });
 
@@ -46,7 +48,7 @@ describe('delete command', () => {
   });
 
   it('should handle task not found', async () => {
-    mockDeleteTask.mockResolvedValue(false);
+    mocks.deleteTask.mockResolvedValue(false);
 
     await expect(deleteAction('task-1', { force: true })).rejects.toThrow('process.exit called');
 
@@ -55,7 +57,7 @@ describe('delete command', () => {
   });
 
   it('should handle errors', async () => {
-    mockDeleteTask.mockRejectedValue(new Error('Database error'));
+    mocks.deleteTask.mockRejectedValue(new Error('Database error'));
 
     await expect(deleteAction('task-1', { force: true })).rejects.toThrow('process.exit called');
 

@@ -2,17 +2,19 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { statusAction } from '../status.js';
 
 // Mock the TaskManager
-const mockChangeTaskStatus = vi.fn();
+const mocks = vi.hoisted(() => ({
+  checkInitialization: vi.fn().mockResolvedValue({ isInitialized: true, missingComponents: [] }),
+  changeTaskStatus: vi.fn(),
+}));
 
-vi.mock("dyson-swarm", function() {
-  return {
-    TaskManager: vi.fn().mockImplementation(function() {
-      return {
-        changeTaskStatus: mockChangeTaskStatus,
-      };
-    }),
-  };
-});
+vi.mock("dyson-swarm", () => ({
+  checkInitialization: mocks.checkInitialization,
+  TaskManager: vi.fn().mockImplementation(function() {
+    return {
+      changeTaskStatus: mocks.changeTaskStatus,
+    };
+  }),
+}));
 
 // Mock console
 const mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -34,11 +36,11 @@ describe('status command', () => {
       frontmatter: { title: 'Test Task' },
       status: 'closed',
     };
-    mockChangeTaskStatus.mockResolvedValue(mockTask);
+    mocks.changeTaskStatus.mockResolvedValue(mockTask);
 
     await statusAction('task-1', 'closed');
 
-    expect(mockChangeTaskStatus).toHaveBeenCalledWith('task-1', 'closed');
+    expect(mocks.changeTaskStatus).toHaveBeenCalledWith('task-1', 'closed');
     expect(mockConsoleLog).toHaveBeenCalledWith('Changed status of task task-1 to: closed');
     expect(mockConsoleLog).toHaveBeenCalledWith('Title: Test Task');
   });
@@ -49,11 +51,11 @@ describe('status command', () => {
       frontmatter: { title: 'Test Task' },
       status: 'in-progress',
     };
-    mockChangeTaskStatus.mockResolvedValue(mockTask);
+    mocks.changeTaskStatus.mockResolvedValue(mockTask);
 
     await statusAction('task-1', 'in-progress');
 
-    expect(mockChangeTaskStatus).toHaveBeenCalledWith('task-1', 'in-progress');
+    expect(mocks.changeTaskStatus).toHaveBeenCalledWith('task-1', 'in-progress');
   });
 
   it('should change status to open', async () => {
@@ -62,11 +64,11 @@ describe('status command', () => {
       frontmatter: { title: 'Test Task' },
       status: 'open',
     };
-    mockChangeTaskStatus.mockResolvedValue(mockTask);
+    mocks.changeTaskStatus.mockResolvedValue(mockTask);
 
     await statusAction('task-1', 'open');
 
-    expect(mockChangeTaskStatus).toHaveBeenCalledWith('task-1', 'open');
+    expect(mocks.changeTaskStatus).toHaveBeenCalledWith('task-1', 'open');
   });
 
   it('should handle invalid status', async () => {
@@ -77,7 +79,7 @@ describe('status command', () => {
   });
 
   it('should handle task not found', async () => {
-    mockChangeTaskStatus.mockResolvedValue(null);
+    mocks.changeTaskStatus.mockResolvedValue(null);
 
     await expect(statusAction('task-1', 'closed')).rejects.toThrow('process.exit called');
 
@@ -86,7 +88,7 @@ describe('status command', () => {
   });
 
   it('should handle errors', async () => {
-    mockChangeTaskStatus.mockRejectedValue(new Error('Database error'));
+    mocks.changeTaskStatus.mockRejectedValue(new Error('Database error'));
 
     await expect(statusAction('task-1', 'closed')).rejects.toThrow('process.exit called');
 

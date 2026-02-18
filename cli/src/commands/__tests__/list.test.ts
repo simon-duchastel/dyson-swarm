@@ -2,17 +2,19 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { listAction } from '../list.js';
 
 // Mock the TaskManager
-const mockListTasks = vi.fn();
+const mocks = vi.hoisted(() => ({
+  checkInitialization: vi.fn().mockResolvedValue({ isInitialized: true, missingComponents: [] }),
+  listTasks: vi.fn(),
+}));
 
-vi.mock("dyson-swarm", function() {
-  return {
-    TaskManager: vi.fn().mockImplementation(function() {
-      return {
-        listTasks: mockListTasks,
-      };
-    }),
-  };
-});
+vi.mock("dyson-swarm", () => ({
+  checkInitialization: mocks.checkInitialization,
+  TaskManager: vi.fn().mockImplementation(function() {
+    return {
+      listTasks: mocks.listTasks,
+    };
+  }),
+}));
 
 // Mock console
 const mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -33,11 +35,11 @@ describe('list command', () => {
       { id: 'task-1', frontmatter: { title: 'Task 1' }, status: 'open' },
       { id: 'task-2', frontmatter: { title: 'Task 2', assignee: 'john.doe' }, status: 'in-progress' },
     ];
-    mockListTasks.mockResolvedValue(mockTasks);
+    mocks.listTasks.mockResolvedValue(mockTasks);
 
     await listAction({});
 
-    expect(mockListTasks).toHaveBeenCalledWith({});
+    expect(mocks.listTasks).toHaveBeenCalledWith({});
     expect(mockConsoleLog).toHaveBeenCalledWith('Found 2 task(s):\n');
     expect(mockConsoleLog).toHaveBeenCalledWith('ID: task-1');
     expect(mockConsoleLog).toHaveBeenCalledWith('ID: task-2');
@@ -47,22 +49,22 @@ describe('list command', () => {
     const mockTasks = [
       { id: 'task-1', frontmatter: { title: 'Task 1' }, status: 'open' },
     ];
-    mockListTasks.mockResolvedValue(mockTasks);
+    mocks.listTasks.mockResolvedValue(mockTasks);
 
     await listAction({ status: 'open' });
 
-    expect(mockListTasks).toHaveBeenCalledWith({ status: 'open' });
+    expect(mocks.listTasks).toHaveBeenCalledWith({ status: 'open' });
   });
 
   it('should filter by assignee', async () => {
     const mockTasks = [
       { id: 'task-1', frontmatter: { title: 'Task 1', assignee: 'john.doe' }, status: 'in-progress' },
     ];
-    mockListTasks.mockResolvedValue(mockTasks);
+    mocks.listTasks.mockResolvedValue(mockTasks);
 
     await listAction({ assignee: 'john.doe' });
 
-    expect(mockListTasks).toHaveBeenCalledWith({ assignee: 'john.doe' });
+    expect(mocks.listTasks).toHaveBeenCalledWith({ assignee: 'john.doe' });
   });
 
   it('should handle invalid status', async () => {
@@ -73,7 +75,7 @@ describe('list command', () => {
   });
 
   it('should show message when no tasks found', async () => {
-    mockListTasks.mockResolvedValue([]);
+    mocks.listTasks.mockResolvedValue([]);
 
     await listAction({});
 
@@ -81,7 +83,7 @@ describe('list command', () => {
   });
 
   it('should handle errors', async () => {
-    mockListTasks.mockRejectedValue(new Error('Database error'));
+    mocks.listTasks.mockRejectedValue(new Error('Database error'));
 
     await expect(listAction({})).rejects.toThrow('process.exit called');
 

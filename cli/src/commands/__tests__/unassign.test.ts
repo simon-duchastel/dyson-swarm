@@ -2,17 +2,19 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { unassignAction } from '../unassign.js';
 
 // Mock the TaskManager
-const mockUnassignTask = vi.fn();
+const mocks = vi.hoisted(() => ({
+  checkInitialization: vi.fn().mockResolvedValue({ isInitialized: true, missingComponents: [] }),
+  unassignTask: vi.fn(),
+}));
 
-vi.mock("dyson-swarm", function() {
-  return {
-    TaskManager: vi.fn().mockImplementation(function() {
-      return {
-        unassignTask: mockUnassignTask,
-      };
-    }),
-  };
-});
+vi.mock("dyson-swarm", () => ({
+  checkInitialization: mocks.checkInitialization,
+  TaskManager: vi.fn().mockImplementation(function() {
+    return {
+      unassignTask: mocks.unassignTask,
+    };
+  }),
+}));
 
 // Mock console
 const mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -34,18 +36,18 @@ describe('unassign command', () => {
       frontmatter: { title: 'Test Task' },
       status: 'open',
     };
-    mockUnassignTask.mockResolvedValue(mockTask);
+    mocks.unassignTask.mockResolvedValue(mockTask);
 
     await unassignAction('task-1');
 
-    expect(mockUnassignTask).toHaveBeenCalledWith('task-1');
+    expect(mocks.unassignTask).toHaveBeenCalledWith('task-1');
     expect(mockConsoleLog).toHaveBeenCalledWith('Unassigned task: task-1');
     expect(mockConsoleLog).toHaveBeenCalledWith('Title: Test Task');
     expect(mockConsoleLog).toHaveBeenCalledWith('Status: open');
   });
 
   it('should handle task not found', async () => {
-    mockUnassignTask.mockResolvedValue(null);
+    mocks.unassignTask.mockResolvedValue(null);
 
     await expect(unassignAction('task-1')).rejects.toThrow('process.exit called');
 
@@ -54,7 +56,7 @@ describe('unassign command', () => {
   });
 
   it('should handle errors', async () => {
-    mockUnassignTask.mockRejectedValue(new Error('Database error'));
+    mocks.unassignTask.mockRejectedValue(new Error('Database error'));
 
     await expect(unassignAction('task-1')).rejects.toThrow('process.exit called');
 
