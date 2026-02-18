@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "dev": "tsx src/index.ts",
     "test": "vitest --run",
-    "test:watch": "vitest --watch"
+    "test:watch": "vitest --watch",
+    "postinstall": "node link-workspace.js"
   },
   "keywords": [
     "issue-tracker",
