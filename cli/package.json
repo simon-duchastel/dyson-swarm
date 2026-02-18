@@ -27,7 +27,7 @@
   "license": "MIT",
   "dependencies": {
     "@cliffy/prompt": "npm:@jsr/cliffy__prompt@^1.0.0-rc.8",
-    "dyson-swarm": "*"
+    "dyson-swarm": "^1.3.0"
   },
   "devDependencies": {
     "@cliffy/ansi": "npm:@jsr/cliffy__ansi@1.0.0",
