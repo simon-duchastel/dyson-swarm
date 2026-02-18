@@ -68,4 +68,4 @@ logs
 
 # Task storage directories
 .swarm/
-!.swarm/.gitkeep
+!.swarm/.gitkeep.opencode/

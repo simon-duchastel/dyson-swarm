@@ -1,6 +1,6 @@
 {
   "name": "dyson-swarm-cli",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "CLI for the dyson-swarm issue tracking system",
   "type": "module",
   "bin": {
@@ -10,7 +10,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
     "dev": "tsx src/index.ts",
     "test": "vitest --run",
     "test:watch": "vitest --watch"
@@ -25,16 +26,16 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "cliffy-flat-help": "1.2.1",
+    "dyson-swarm": "1.1.0"
+  },
+  "devDependencies": {
     "@cliffy/ansi": "npm:@jsr/cliffy__ansi@1.0.0",
     "@cliffy/command": "npm:@jsr/cliffy__command@1.0.0",
     "@cliffy/flags": "npm:@jsr/cliffy__flags@1.0.0",
     "@cliffy/table": "npm:@jsr/cliffy__table@1.0.0",
-    "cliffy": "2.5.1",
-    "cliffy-flat-help": "1.2.1",
-    "dyson-swarm": "1.0.0"
-  },
-  "devDependencies": {
     "@types/node": "25.2.3",
+    "tsup": "8.5.1",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
     "vitest": "4.0.18"
