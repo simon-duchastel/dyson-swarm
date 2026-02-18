@@ -177,7 +177,7 @@ await tm.changeTaskStatus('abc-123', 'in-progress');
 await tm.changeTaskStatus('abc-123', 'closed');
 ```
 
-Valid statuses: `open`, `in-progress`, `closed`
+Valid statuses: `open`, `in-progress`, `closed`, `draft`
 
 #### assignTask(taskId, assignee)
 
@@ -210,7 +210,7 @@ await tm.deleteTask('abc-123');
   id: string;
   frontmatter: { title: string; assignee?: string };
   description: string;
-  status: 'open' | 'in-progress' | 'closed';
+  status: 'open' | 'in-progress' | 'closed' | 'draft';
 }
 ```
 

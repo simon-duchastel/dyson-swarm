@@ -1,13 +1,18 @@
 import { Command } from "@cliffy/command";
+import { Confirm } from "@cliffy/prompt";
 import { TaskManager, NotInitializedError } from "dyson-swarm";
 
 export async function deleteAction(taskId: string, options: any) {
   const taskManager = new TaskManager();
 
-  if (!options.force) {
-    console.log(`Are you sure you want to delete task ${taskId}?`);
-    console.log("Use --force to skip this confirmation.");
-    process.exit(1);
+  const force = options.force ?? await Confirm.prompt({
+    message: `Are you sure you want to delete task ${taskId}?`,
+    default: false,
+  });
+
+  if (!force) {
+    console.log("Deletion cancelled.");
+    return;
   }
 
   try {
