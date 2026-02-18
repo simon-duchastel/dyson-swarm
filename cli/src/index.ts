@@ -2,6 +2,10 @@
 
 import { Command } from "@cliffy/command";
 import { flatHelp } from "cliffy-flat-help";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const { version } = require("../package.json");
 
 import { createCommand } from "./commands/create.js";
 import { listCommand } from "./commands/list.js";
@@ -17,7 +21,7 @@ await new Command()
   .help(flatHelp())
   .name("swarm")
   .description("A markdown-based issue tracking system CLI")
-  .version("1.0.0")
+  .version(version)
   .action(function () {
     this.showHelp();
   })
