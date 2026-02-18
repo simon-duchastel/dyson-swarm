@@ -38,6 +38,6 @@
     "vitest": "4.0.18"
   },
   "dependencies": {
-    "cliffy-flat-help": "1.2.1"
+    "cliffy-flat-help": "1.2.2"
   }
 }
