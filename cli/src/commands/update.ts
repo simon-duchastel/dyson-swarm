@@ -1,21 +1,51 @@
 import { Command } from "@cliffy/command";
+import { Input } from "@cliffy/prompt";
 import { TaskManager } from "dyson-swarm";
 
 export async function updateAction(taskId: string, options: any) {
   const taskManager = new TaskManager();
 
-  try {
-    const updateOptions: any = {};
+  const updateOptions: any = {};
 
-    if (options.title) updateOptions.title = options.title;
-    if (options.description) updateOptions.description = options.description;
-    if (options.assignee) updateOptions.assignee = options.assignee;
-
-    if (Object.keys(updateOptions).length === 0) {
-      console.error("No updates specified. Use --title, --description, or --assignee.");
-      process.exit(1);
+  if (options.title !== undefined) {
+    updateOptions.title = options.title;
+  } else {
+    const title = await Input.prompt({
+      message: "New title (optional, press Enter to skip):",
+    });
+    if (title) {
+      updateOptions.title = title;
     }
+  }
 
+  if (options.description !== undefined) {
+    updateOptions.description = options.description;
+  } else {
+    const description = await Input.prompt({
+      message: "New description (optional, press Enter to skip):",
+    });
+    if (description) {
+      updateOptions.description = description;
+    }
+  }
+
+  if (options.assignee !== undefined) {
+    updateOptions.assignee = options.assignee;
+  } else {
+    const assignee = await Input.prompt({
+      message: "New assignee (optional, press Enter to skip):",
+    });
+    if (assignee) {
+      updateOptions.assignee = assignee;
+    }
+  }
+
+  if (Object.keys(updateOptions).length === 0) {
+    console.log("No updates specified. Task was not modified.");
+    return;
+  }
+
+  try {
     const task = await taskManager.updateTask(taskId, updateOptions);
 
     if (!task) {

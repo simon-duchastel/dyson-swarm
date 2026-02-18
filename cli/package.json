@@ -26,15 +26,16 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@cliffy/prompt": "npm:@jsr/cliffy__prompt@^1.0.0-rc.8",
     "dyson-swarm": "1.2.4"
   },
   "devDependencies": {
-    "cliffy-flat-help": "1.2.2",
     "@cliffy/ansi": "npm:@jsr/cliffy__ansi@1.0.0",
     "@cliffy/command": "npm:@jsr/cliffy__command@1.0.0",
     "@cliffy/flags": "npm:@jsr/cliffy__flags@1.0.0",
     "@cliffy/table": "npm:@jsr/cliffy__table@1.0.0",
     "@types/node": "25.2.3",
+    "cliffy-flat-help": "1.2.2",
     "tsup": "8.5.1",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
