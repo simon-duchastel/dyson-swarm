@@ -10,8 +10,8 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   minify: true,
-  // Bundle all dependencies including JSR packages
-  noExternal: ['@cliffy/ansi', '@cliffy/command', '@cliffy/flags', '@cliffy/table'],
+  // Bundle all JSR packages
+  noExternal: [/@jsr\/.*/],
   // Keep dyson-swarm as external since it's a local workspace package
   external: ['dyson-swarm'],
 });
