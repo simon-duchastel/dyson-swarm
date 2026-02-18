@@ -1,5 +1,5 @@
 import { Command } from "@cliffy/command";
-import { TaskManager } from "dyson-swarm";
+import { TaskManager, NotInitializedError } from "dyson-swarm";
 
 export async function getAction(taskId: string) {
   const taskManager = new TaskManager();
@@ -21,6 +21,10 @@ export async function getAction(taskId: string) {
     console.log(`\nDescription:`);
     console.log(task.description);
   } catch (error) {
+    if (error instanceof NotInitializedError) {
+      console.error("Error:", error.message);
+      process.exit(1);
+    }
     console.error("Failed to get task:", error instanceof Error ? error.message : error);
     process.exit(1);
   }

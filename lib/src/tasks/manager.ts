@@ -6,6 +6,7 @@ import type { Task, TaskStatus, CreateTaskOptions, UpdateTaskOptions, TaskFilter
 import { TaskFileUtils } from './file-utils.js';
 import { StatusUtils } from './status-utils.js';
 import { ensureSchemaVersion } from './schema-version/index.js';
+import { checkInitialization, NotInitializedError } from '../init.js';
 import {
   getLockfilePath,
   getTasksDir,
@@ -25,9 +26,25 @@ export class TaskManager {
   }
 
   /**
+   * Check if the directory is initialized, throw NotInitializedError if not
+   */
+  private async requireInitialization(): Promise<void> {
+    const { isInitialized, missingComponents } = await checkInitialization(this.cwdProvider);
+    if (!isInitialized) {
+      throw new NotInitializedError(
+        `This directory is not initialized for dyson-swarm. Missing: ${missingComponents.join(', ')}. Run "swarm init" to initialize.`,
+        missingComponents
+      );
+    }
+  }
+
+  /**
    * Execute an operation with the task lock held
    */
   private async withLock<T>(operation: () => Promise<T>): Promise<T> {
+    // Check initialization first
+    await this.requireInitialization();
+
     const lockfilePath = getLockfilePath(this.cwdProvider);
     
     // Ensure schema version is up to date

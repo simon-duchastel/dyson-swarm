@@ -6,6 +6,7 @@ const mockCreateTask = vi.fn();
 
 vi.mock("dyson-swarm", function() {
   return {
+    NotInitializedError: class NotInitializedError extends Error {},
     TaskManager: vi.fn().mockImplementation(function() {
       return {
         createTask: mockCreateTask,

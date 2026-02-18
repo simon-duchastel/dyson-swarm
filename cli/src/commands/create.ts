@@ -1,6 +1,6 @@
 import { Command } from "@cliffy/command";
 import { Input } from "@cliffy/prompt";
-import { TaskManager } from "dyson-swarm";
+import { TaskManager, NotInitializedError } from "dyson-swarm";
 
 export async function createAction(options: any) {
   const taskManager = new TaskManager();
@@ -41,6 +41,10 @@ export async function createAction(options: any) {
       console.log(`Parent: ${parent}`);
     }
   } catch (error) {
+    if (error instanceof NotInitializedError) {
+      console.error("Error:", error.message);
+      process.exit(1);
+    }
     console.error("Failed to create task:", error instanceof Error ? error.message : error);
     process.exit(1);
   }

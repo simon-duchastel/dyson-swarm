@@ -1,5 +1,5 @@
 import { Command } from "@cliffy/command";
-import { TaskManager } from "dyson-swarm";
+import { TaskManager, NotInitializedError } from "dyson-swarm";
 
 export async function unassignAction(taskId: string) {
   const taskManager = new TaskManager();
@@ -16,6 +16,10 @@ export async function unassignAction(taskId: string) {
     console.log(`Title: ${task.frontmatter.title}`);
     console.log(`Status: ${task.status}`);
   } catch (error) {
+    if (error instanceof NotInitializedError) {
+      console.error("Error:", error.message);
+      process.exit(1);
+    }
     console.error("Failed to unassign task:", error instanceof Error ? error.message : error);
     process.exit(1);
   }

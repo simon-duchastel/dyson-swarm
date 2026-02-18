@@ -282,6 +282,18 @@ describe('TaskManager', () => {
     vi.clearAllMocks();
     
     testCwd = '/test/workspace';
+    
+    // Initialize mock filesystem with required structure
+    mockFS.directories.add(`${testCwd}/.swarm`);
+    mockFS.directories.add(`${testCwd}/.swarm/tasks`);
+    mockFS.directories.add(`${testCwd}/.swarm/statuses`);
+    mockFS.files.set(`${testCwd}/.swarm/version`, '2');
+    mockFS.files.set(`${testCwd}/.swarm/lockfile`, '');
+    mockFS.files.set(`${testCwd}/.swarm/statuses/draft`, '');
+    mockFS.files.set(`${testCwd}/.swarm/statuses/open`, '');
+    mockFS.files.set(`${testCwd}/.swarm/statuses/in-progress`, '');
+    mockFS.files.set(`${testCwd}/.swarm/statuses/closed`, '');
+    
     taskManager = new TaskManager({
       cwdProvider: () => testCwd,
     });

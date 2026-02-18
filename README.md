@@ -35,6 +35,9 @@ await tm.changeTaskStatus(task.id, 'closed');
 After installation, use the `swarm` command (if `dyson-swarm-cli` was installed):
 
 ```bash
+# Initialize dyson-swarm in the current directory
+swarm init
+
 # Create a task
 swarm create -t "Fix bug" -d "Login not working"
 
@@ -66,6 +69,7 @@ swarm delete <taskId>
 
 | Command | Description |
 |---------|-------------|
+| `init` | Initialize dyson-swarm in the current directory |
 | `create` | Create a new task |
 | `list` | List tasks with optional filters |
 | `get <taskId>` | Get a specific task |

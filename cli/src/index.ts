@@ -11,6 +11,7 @@ import { statusCommand } from "./commands/status.js";
 import { assignCommand } from "./commands/assign.js";
 import { unassignCommand } from "./commands/unassign.js";
 import { deleteCommand } from "./commands/delete.js";
+import { initCommand } from "./commands/init.js";
 
 await new Command()
   .help(flatHelp())
@@ -20,6 +21,7 @@ await new Command()
   .action(function () {
     this.showHelp();
   })
+  .command("init", initCommand)
   .command("create", createCommand)
   .command("list", listCommand)
   .command("get", getCommand)

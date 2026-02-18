@@ -1,6 +1,6 @@
 import { Command } from "@cliffy/command";
 import { Select } from "@cliffy/prompt";
-import { TaskManager } from "dyson-swarm";
+import { TaskManager, NotInitializedError } from "dyson-swarm";
 
 export async function statusAction(taskId: string, status: string | undefined) {
   const taskManager = new TaskManager();
@@ -30,6 +30,10 @@ export async function statusAction(taskId: string, status: string | undefined) {
     console.log(`Changed status of task ${task.id} to: ${task.status}`);
     console.log(`Title: ${task.frontmatter.title}`);
   } catch (error) {
+    if (error instanceof NotInitializedError) {
+      console.error("Error:", error.message);
+      process.exit(1);
+    }
     console.error("Failed to change task status:", error instanceof Error ? error.message : error);
     process.exit(1);
   }
