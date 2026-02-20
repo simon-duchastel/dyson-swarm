@@ -44,6 +44,21 @@ swarm create -t "Fix bug" -d "Login not working"
 # Create a subtask
 swarm create -t "Subtask" -d "Part of parent" --parent <parentTaskId>
 
+# Create a task with dependencies
+swarm create -t "Implement feature" -d "New feature implementation" --depends-on <task-id-1>,<task-id-2>
+
+# Add a dependency to an existing task
+swarm depend <taskId> <dependencyId>
+
+# Remove a dependency from a task
+swarm depend <taskId> <dependencyId> --remove
+
+# Show task dependencies
+swarm deps <taskId>
+
+# List tasks that depend on a specific task
+swarm list --depends-on <taskId>
+
 # List tasks (filter by status, assignee)
 swarm list --status open
 swarm list --assignee john
@@ -78,6 +93,8 @@ swarm delete <taskId>
 | `assign <taskId> <assignee>` | Assign a task |
 | `unassign <taskId>` | Unassign a task |
 | `delete <taskId>` | Delete a task |
+| `depend <taskId> <dependencyId>` | Add/remove a task dependency |
+| `deps <taskId>` | Show task dependencies |
 
 Run `swarm --help` for comprehensive help dialog
 
@@ -116,6 +133,13 @@ const subtask = await tm.createTask({
   title: 'Login UI',
   description: 'Design login form',
   parentTaskId: 'parent-task-id'
+});
+
+// Task with dependencies
+const taskWithDeps = await tm.createTask({
+  title: 'Implement feature',
+  description: 'Implement the new feature',
+  dependsOn: ['task-id-1', 'task-id-2']
 });
 ```
 
@@ -203,12 +227,79 @@ Delete a task. Returns true if deleted.
 await tm.deleteTask('abc-123');
 ```
 
+#### getTaskDependencies(taskId)
+
+Get tasks that this task depends on. Returns an array of tasks.
+
+```javascript
+const deps = await tm.getTaskDependencies('abc-123');
+for (const dep of deps) {
+  console.log(`${dep.id}: ${dep.frontmatter.title} (${dep.status})`);
+}
+```
+
+#### getDependentTasks(taskId)
+
+Get tasks that depend on this task. Returns an array of tasks.
+
+```javascript
+const dependents = await tm.getDependentTasks('abc-123');
+for (const dep of dependents) {
+  console.log(`${dep.id}: ${dep.frontmatter.title} (${dep.status})`);
+}
+```
+
+#### addTaskDependency(taskId, dependencyId)
+
+Add a dependency to a task. Returns the updated task. Throws error if it would create a circular dependency.
+
+```javascript
+await tm.addTaskDependency('abc-123', 'def-456');
+```
+
+#### removeTaskDependency(taskId, dependencyId)
+
+Remove a dependency from a task. Returns the updated task.
+
+```javascript
+await tm.removeTaskDependency('abc-123', 'def-456');
+```
+
+### Task Dependencies
+
+Tasks can depend on other tasks. This is useful for modeling work that cannot start until other work is completed.
+
+- Tasks can have zero or more dependencies
+- Dependencies are stored as an array of task IDs in the frontmatter
+- Circular dependencies are automatically prevented
+- Both main tasks and subtasks can have dependencies
+
+```javascript
+// Create task with dependencies
+const task = await tm.createTask({
+  title: 'Deploy to production',
+  description: 'Deploy the application',
+  dependsOn: ['test-task-id', 'build-task-id']
+});
+
+// Add dependency later
+await tm.addTaskDependency(task.id, 'review-task-id');
+
+// Check if dependencies are complete
+const deps = await tm.getTaskDependencies(task.id);
+const allComplete = deps.every(d => d.status === 'closed');
+```
+
 ### Task Object
 
 ```typescript
 {
   id: string;
-  frontmatter: { title: string; assignee?: string };
+  frontmatter: { 
+    title: string; 
+    assignee?: string;
+    dependsOn?: string[];  // Array of task IDs this task depends on
+  };
   description: string;
   status: 'open' | 'in-progress' | 'closed' | 'draft';
 }

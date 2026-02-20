@@ -21,7 +21,7 @@ import { TaskFileUtils } from '../file-utils.js';
  * Increment this when making breaking changes to the directory structure
  * or task file format
  */
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
 
 /**
  * Schema version file name

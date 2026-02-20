@@ -23,7 +23,16 @@ export async function listAction(options: any) {
       filter.taskId = options.task;
     }
 
-    const tasks = await taskManager.listTasks(filter);
+    if (options.dependsOn) {
+      filter.dependsOn = options.dependsOn;
+    }
+
+    let tasks = await taskManager.listTasks(filter);
+
+    // Apply assignee filter post-query (since it's not in the TaskFilter interface)
+    if (options.assignee) {
+      tasks = tasks.filter(task => task.frontmatter.assignee === options.assignee);
+    }
 
     if (tasks.length === 0) {
       console.log("No tasks found.");
@@ -56,4 +65,5 @@ export const listCommand: any = new Command()
   .option("-s, --status <status>", "Filter by status (open, in-progress, closed).")
   .option("-a, --assignee <assignee>", "Filter by assignee.")
   .option("-t, --task <taskId>", "Filter by task ID and include all subtasks (nested).")
+  .option("--depends-on <taskId>", "Filter tasks that depend on the given task ID.")
   .action(listAction);

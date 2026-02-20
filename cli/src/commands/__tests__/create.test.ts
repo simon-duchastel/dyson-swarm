@@ -139,11 +139,12 @@ describe('create command', () => {
         .mockResolvedValueOnce('Prompted Title')
         .mockResolvedValueOnce('Prompted Description')
         .mockResolvedValueOnce('')
+        .mockResolvedValueOnce('')
         .mockResolvedValueOnce('');
 
       await createAction({});
 
-      expect(mockInputPrompt).toHaveBeenCalledTimes(4);
+      expect(mockInputPrompt).toHaveBeenCalledTimes(5);
       expect(mockInputPrompt).toHaveBeenNthCalledWith(1, {
         message: 'Enter task title:',
         minLength: 1,
@@ -158,11 +159,15 @@ describe('create command', () => {
       expect(mockInputPrompt).toHaveBeenNthCalledWith(4, {
         message: 'Enter parent task ID (optional):',
       });
+      expect(mockInputPrompt).toHaveBeenNthCalledWith(5, {
+        message: 'Enter task IDs this task depends on (comma-separated, optional):',
+      });
       expect(mockCreateTask).toHaveBeenCalledWith({
         title: 'Prompted Title',
         description: 'Prompted Description',
         assignee: undefined,
         parentTaskId: undefined,
+        dependsOn: undefined,
       });
     });
 
@@ -177,6 +182,7 @@ describe('create command', () => {
         .mockResolvedValueOnce('Test Task')
         .mockResolvedValueOnce('Test Description')
         .mockResolvedValueOnce('jane.doe')
+        .mockResolvedValueOnce('')
         .mockResolvedValueOnce('');
 
       await createAction({});
@@ -186,6 +192,7 @@ describe('create command', () => {
         description: 'Test Description',
         assignee: 'jane.doe',
         parentTaskId: undefined,
+        dependsOn: undefined,
       });
     });
 
@@ -200,7 +207,8 @@ describe('create command', () => {
         .mockResolvedValueOnce('Subtask')
         .mockResolvedValueOnce('Test Description')
         .mockResolvedValueOnce('')
-        .mockResolvedValueOnce('parent-id');
+        .mockResolvedValueOnce('parent-id')
+        .mockResolvedValueOnce('');
 
       await createAction({});
 
@@ -209,6 +217,7 @@ describe('create command', () => {
         description: 'Test Description',
         assignee: undefined,
         parentTaskId: 'parent-id',
+        dependsOn: undefined,
       });
     });
 
@@ -221,19 +230,21 @@ describe('create command', () => {
       mockCreateTask.mockResolvedValue(mockTask);
       mockInputPrompt
         .mockResolvedValueOnce('Test Task')
-        .mockResolvedValueOnce('Test Description');
+        .mockResolvedValueOnce('Test Description')
+        .mockResolvedValueOnce('');
 
       await createAction({
         assignee: 'flag-assignee',
         parent: 'flag-parent',
       });
 
-      expect(mockInputPrompt).toHaveBeenCalledTimes(2);
+      expect(mockInputPrompt).toHaveBeenCalledTimes(3);
       expect(mockCreateTask).toHaveBeenCalledWith({
         title: 'Test Task',
         description: 'Test Description',
         assignee: 'flag-assignee',
         parentTaskId: 'flag-parent',
+        dependsOn: undefined,
       });
     });
 
@@ -247,13 +258,14 @@ describe('create command', () => {
       mockInputPrompt
         .mockResolvedValueOnce('Prompted Description')
         .mockResolvedValueOnce('prompted-assignee')
+        .mockResolvedValueOnce('')
         .mockResolvedValueOnce('');
 
       await createAction({
         title: 'Flag Title',
       });
 
-      expect(mockInputPrompt).toHaveBeenCalledTimes(3);
+      expect(mockInputPrompt).toHaveBeenCalledTimes(4);
       expect(mockInputPrompt).not.toHaveBeenCalledWith(
         expect.objectContaining({ message: 'Enter task title:' })
       );
@@ -262,6 +274,7 @@ describe('create command', () => {
         description: 'Prompted Description',
         assignee: 'prompted-assignee',
         parentTaskId: undefined,
+        dependsOn: undefined,
       });
     });
   });

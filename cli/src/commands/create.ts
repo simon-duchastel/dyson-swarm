@@ -24,11 +24,18 @@ export async function createAction(options: any) {
       message: "Enter parent task ID (optional):",
     });
 
+    const dependsOnInput = options.dependsOn ?? await Input.prompt({
+      message: "Enter task IDs this task depends on (comma-separated, optional):",
+    });
+
+    const dependsOn = dependsOnInput ? dependsOnInput.split(',').map((id: string) => id.trim()).filter(Boolean) : undefined;
+
     const task = await taskManager.createTask({
       title,
       description,
       assignee: assignee || undefined,
       parentTaskId: parent || undefined,
+      dependsOn,
     });
 
     console.log(`Created task: ${task.id}`);
@@ -58,4 +65,5 @@ export const createCommand: any = new Command()
   .allowEmpty()
   .option("-a, --assignee <assignee>", "Assignee username.")
   .option("-p, --parent <parentTaskId>", "Parent task ID to create a subtask.")
+  .option("--depends-on <taskIds>", "Comma-separated list of task IDs this task depends on.")
   .action(createAction);

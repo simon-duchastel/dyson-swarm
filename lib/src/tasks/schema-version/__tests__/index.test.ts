@@ -343,8 +343,8 @@ describe('Schema Version', () => {
   });
 
   describe('CURRENT_SCHEMA_VERSION', () => {
-    it('should be set to 2', () => {
-      expect(CURRENT_SCHEMA_VERSION).toBe(2);
+    it('should be set to 3', () => {
+      expect(CURRENT_SCHEMA_VERSION).toBe(3);
     });
 
     it('should be a positive integer', () => {

@@ -40,6 +40,17 @@ export async function updateAction(taskId: string, options: any) {
     }
   }
 
+  if (options.dependsOn !== undefined) {
+    updateOptions.dependsOn = options.dependsOn.split(',').map((id: string) => id.trim()).filter(Boolean);
+  } else {
+    const dependsOnInput = await Input.prompt({
+      message: "New dependencies (comma-separated task IDs, optional, press Enter to skip):",
+    });
+    if (dependsOnInput) {
+      updateOptions.dependsOn = dependsOnInput.split(',').map((id: string) => id.trim()).filter(Boolean);
+    }
+  }
+
   if (Object.keys(updateOptions).length === 0) {
     console.log("No updates specified. Task was not modified.");
     return;
@@ -76,4 +87,5 @@ export const updateCommand: any = new Command()
   .option("-t, --title <title>", "New title.")
   .option("-d, --description <description>", "New description.")
   .option("-a, --assignee <assignee>", "New assignee.")
+  .option("--depends-on <taskIds>", "Comma-separated list of task IDs this task depends on.")
   .action(async (options: any, taskId: string) => updateAction(taskId, options));
