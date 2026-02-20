@@ -1,26 +1,21 @@
 import { Command } from "@cliffy/command";
-import { Select } from "@cliffy/prompt";
 import { TaskManager, NotInitializedError } from "dyson-swarm";
 
 export async function statusAction(taskId: string, status: string | undefined) {
   const taskManager = new TaskManager();
 
-  const resolvedStatus = status ?? await Select.prompt({
-    message: "Select new status:",
-    options: [
-      { value: "open", name: "Open" },
-      { value: "in-progress", name: "In Progress" },
-      { value: "closed", name: "Closed" },
-    ],
-  });
+  if (!status) {
+    console.error("Error: Status is required (open, in-progress, or closed)");
+    process.exit(1);
+  }
 
-  if (!["open", "in-progress", "closed"].includes(resolvedStatus)) {
+  if (!["open", "in-progress", "closed"].includes(status)) {
     console.error("Invalid status. Must be one of: open, in-progress, closed");
     process.exit(1);
   }
 
   try {
-    const task = await taskManager.changeTaskStatus(taskId, resolvedStatus as "open" | "in-progress" | "closed");
+    const task = await taskManager.changeTaskStatus(taskId, status as "open" | "in-progress" | "closed");
 
     if (!task) {
       console.error(`Task not found: ${taskId}`);

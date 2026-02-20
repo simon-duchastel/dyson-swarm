@@ -1,17 +1,16 @@
 import { Command } from "@cliffy/command";
-import { Input } from "@cliffy/prompt";
 import { TaskManager, NotInitializedError } from "dyson-swarm";
 
 export async function assignAction(taskId: string, assignee: string | undefined) {
   const taskManager = new TaskManager();
 
-  const resolvedAssignee = assignee ?? await Input.prompt({
-    message: "Enter assignee username:",
-    minLength: 1,
-  });
+  if (!assignee) {
+    console.error("Error: Assignee is required");
+    process.exit(1);
+  }
 
   try {
-    const task = await taskManager.assignTask(taskId, resolvedAssignee);
+    const task = await taskManager.assignTask(taskId, assignee);
 
     if (!task) {
       console.error(`Task not found: ${taskId}`);

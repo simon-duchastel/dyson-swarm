@@ -15,19 +15,6 @@ vi.mock("dyson-swarm", function() {
   };
 });
 
-// Mock @cliffy/prompt
-vi.mock("@cliffy/prompt", function() {
-  return {
-    Input: {
-      prompt: vi.fn(),
-    },
-  };
-});
-
-// Import the mocked module to access it
-import { Input } from '@cliffy/prompt';
-const mockInputPrompt = vi.mocked(Input.prompt);
-
 // Mock console
 const mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
 const mockConsoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -42,7 +29,7 @@ describe('update command', () => {
     vi.clearAllMocks();
   });
 
-  describe('with all options provided via flags', () => {
+  describe('with options provided via flags', () => {
     it('should update task title', async () => {
       const mockTask = {
         id: 'task-1',
@@ -50,7 +37,6 @@ describe('update command', () => {
         status: 'open',
       };
       mockUpdateTask.mockResolvedValue(mockTask);
-      mockInputPrompt.mockResolvedValueOnce('').mockResolvedValueOnce('');
 
       await updateAction('task-1', { title: 'New Title' });
 
@@ -124,114 +110,12 @@ describe('update command', () => {
     });
   });
 
-  describe('with interactive prompts', () => {
-    it('should prompt for all fields when no options provided', async () => {
-      const mockTask = {
-        id: 'task-1',
-        frontmatter: { title: 'New Title', assignee: 'jane.doe' },
-        status: 'open',
-        description: 'New desc',
-      };
-      mockUpdateTask.mockResolvedValue(mockTask);
-      mockInputPrompt
-        .mockResolvedValueOnce('New Title')
-        .mockResolvedValueOnce('New desc')
-        .mockResolvedValueOnce('jane.doe')
-        .mockResolvedValueOnce('');
-
-      await updateAction('task-1', {});
-
-      expect(mockInputPrompt).toHaveBeenCalledTimes(4);
-      expect(mockInputPrompt).toHaveBeenNthCalledWith(1, {
-        message: 'New title (optional, press Enter to skip):',
-      });
-      expect(mockInputPrompt).toHaveBeenNthCalledWith(2, {
-        message: 'New description (optional, press Enter to skip):',
-      });
-      expect(mockInputPrompt).toHaveBeenNthCalledWith(3, {
-        message: 'New assignee (optional, press Enter to skip):',
-      });
-      expect(mockInputPrompt).toHaveBeenNthCalledWith(4, {
-        message: 'New dependencies (comma-separated task IDs, optional, press Enter to skip):',
-      });
-    });
-
-    it('should skip update when all prompts return empty', async () => {
-      mockInputPrompt
-        .mockResolvedValueOnce('')
-        .mockResolvedValueOnce('')
-        .mockResolvedValueOnce('')
-        .mockResolvedValueOnce('');
-
+  describe('without options provided', () => {
+    it('should skip update when no options provided', async () => {
       await updateAction('task-1', {});
 
       expect(mockUpdateTask).not.toHaveBeenCalled();
       expect(mockConsoleLog).toHaveBeenCalledWith('No updates specified. Task was not modified.');
-    });
-
-    it('should only update fields with non-empty prompt values', async () => {
-      const mockTask = {
-        id: 'task-1',
-        frontmatter: { title: 'Updated Title' },
-        status: 'open',
-      };
-      mockUpdateTask.mockResolvedValue(mockTask);
-      mockInputPrompt
-        .mockResolvedValueOnce('Updated Title')
-        .mockResolvedValueOnce('')
-        .mockResolvedValueOnce('')
-        .mockResolvedValueOnce('');
-
-      await updateAction('task-1', {});
-
-      expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { title: 'Updated Title' });
-    });
-
-    it('should not prompt for fields provided via flags', async () => {
-      const mockTask = {
-        id: 'task-1',
-        frontmatter: { title: 'Flag Title' },
-        status: 'open',
-      };
-      mockUpdateTask.mockResolvedValue(mockTask);
-      mockInputPrompt
-        .mockResolvedValueOnce('')
-        .mockResolvedValueOnce('')
-        .mockResolvedValueOnce('');
-
-      await updateAction('task-1', { title: 'Flag Title' });
-
-      expect(mockInputPrompt).toHaveBeenCalledTimes(3);
-      expect(mockInputPrompt).toHaveBeenNthCalledWith(1, {
-        message: 'New description (optional, press Enter to skip):',
-      });
-      expect(mockInputPrompt).toHaveBeenNthCalledWith(2, {
-        message: 'New assignee (optional, press Enter to skip):',
-      });
-      expect(mockInputPrompt).toHaveBeenNthCalledWith(3, {
-        message: 'New dependencies (comma-separated task IDs, optional, press Enter to skip):',
-      });
-      expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { title: 'Flag Title' });
-    });
-
-    it('should mix flag values and prompt values', async () => {
-      const mockTask = {
-        id: 'task-1',
-        frontmatter: { title: 'Flag Title', assignee: 'Prompted Assignee' },
-        status: 'open',
-      };
-      mockUpdateTask.mockResolvedValue(mockTask);
-      mockInputPrompt
-        .mockResolvedValueOnce('')
-        .mockResolvedValueOnce('Prompted Assignee')
-        .mockResolvedValueOnce('');
-
-      await updateAction('task-1', { title: 'Flag Title' });
-
-      expect(mockUpdateTask).toHaveBeenCalledWith('task-1', {
-        title: 'Flag Title',
-        assignee: 'Prompted Assignee',
-      });
     });
   });
 });

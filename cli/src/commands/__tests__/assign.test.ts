@@ -15,19 +15,6 @@ vi.mock("dyson-swarm", function() {
   };
 });
 
-// Mock @cliffy/prompt
-vi.mock("@cliffy/prompt", function() {
-  return {
-    Input: {
-      prompt: vi.fn(),
-    },
-  };
-});
-
-// Import the mocked module to access it
-import { Input } from '@cliffy/prompt';
-const mockInputPrompt = vi.mocked(Input.prompt);
-
 // Mock console
 const mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
 const mockConsoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -57,7 +44,6 @@ describe('assign command', () => {
       expect(mockConsoleLog).toHaveBeenCalledWith('Assigned task task-1 to: john.doe');
       expect(mockConsoleLog).toHaveBeenCalledWith('Title: Test Task');
       expect(mockConsoleLog).toHaveBeenCalledWith('Status: in-progress');
-      expect(mockInputPrompt).not.toHaveBeenCalled();
     });
 
     it('should handle task not found', async () => {
@@ -79,38 +65,13 @@ describe('assign command', () => {
     });
   });
 
-  describe('with interactive prompt', () => {
-    it('should prompt for assignee when not provided', async () => {
-      const mockTask = {
-        id: 'task-1',
-        frontmatter: { title: 'Test Task', assignee: 'jane.doe' },
-        status: 'open',
-      };
-      mockAssignTask.mockResolvedValue(mockTask);
-      mockInputPrompt.mockResolvedValue('jane.doe');
+  describe('without assignee provided', () => {
+    it('should error when assignee is not provided', async () => {
+      await expect(assignAction('task-1', undefined)).rejects.toThrow('process.exit called');
 
-      await assignAction('task-1', undefined);
-
-      expect(mockInputPrompt).toHaveBeenCalledWith({
-        message: 'Enter assignee username:',
-        minLength: 1,
-      });
-      expect(mockAssignTask).toHaveBeenCalledWith('task-1', 'jane.doe');
-    });
-
-    it('should use prompted assignee value', async () => {
-      const mockTask = {
-        id: 'task-1',
-        frontmatter: { title: 'Test Task', assignee: 'prompted-user' },
-        status: 'open',
-      };
-      mockAssignTask.mockResolvedValue(mockTask);
-      mockInputPrompt.mockResolvedValue('prompted-user');
-
-      await assignAction('task-1', undefined);
-
-      expect(mockAssignTask).toHaveBeenCalledWith('task-1', 'prompted-user');
-      expect(mockConsoleLog).toHaveBeenCalledWith('Assigned task task-1 to: prompted-user');
+      expect(mockConsoleError).toHaveBeenCalledWith('Error: Assignee is required');
+      expect(mockExit).toHaveBeenCalledWith(1);
+      expect(mockAssignTask).not.toHaveBeenCalled();
     });
   });
 });

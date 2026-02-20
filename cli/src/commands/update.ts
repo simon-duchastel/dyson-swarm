@@ -1,5 +1,4 @@
 import { Command } from "@cliffy/command";
-import { Input } from "@cliffy/prompt";
 import { TaskManager, NotInitializedError } from "dyson-swarm";
 
 export async function updateAction(taskId: string, options: any) {
@@ -9,46 +8,18 @@ export async function updateAction(taskId: string, options: any) {
 
   if (options.title !== undefined) {
     updateOptions.title = options.title;
-  } else {
-    const title = await Input.prompt({
-      message: "New title (optional, press Enter to skip):",
-    });
-    if (title) {
-      updateOptions.title = title;
-    }
   }
 
   if (options.description !== undefined) {
     updateOptions.description = options.description;
-  } else {
-    const description = await Input.prompt({
-      message: "New description (optional, press Enter to skip):",
-    });
-    if (description) {
-      updateOptions.description = description;
-    }
   }
 
   if (options.assignee !== undefined) {
     updateOptions.assignee = options.assignee;
-  } else {
-    const assignee = await Input.prompt({
-      message: "New assignee (optional, press Enter to skip):",
-    });
-    if (assignee) {
-      updateOptions.assignee = assignee;
-    }
   }
 
   if (options.dependsOn !== undefined) {
     updateOptions.dependsOn = options.dependsOn.split(',').map((id: string) => id.trim()).filter(Boolean);
-  } else {
-    const dependsOnInput = await Input.prompt({
-      message: "New dependencies (comma-separated task IDs, optional, press Enter to skip):",
-    });
-    if (dependsOnInput) {
-      updateOptions.dependsOn = dependsOnInput.split(',').map((id: string) => id.trim()).filter(Boolean);
-    }
   }
 
   if (Object.keys(updateOptions).length === 0) {
