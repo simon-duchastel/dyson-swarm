@@ -74,7 +74,7 @@ describe('status command', () => {
     it('should handle invalid status', async () => {
       await expect(statusAction('task-1', 'invalid')).rejects.toThrow('process.exit called');
 
-      expect(mockConsoleError).toHaveBeenCalledWith('Invalid status. Must be one of: open, in-progress, closed');
+      expect(mockConsoleError).toHaveBeenCalledWith('Invalid status. Must be one of: draft, open, in-progress, closed');
       expect(mockExit).toHaveBeenCalledWith(1);
     });
 
@@ -101,7 +101,7 @@ describe('status command', () => {
     it('should error when status is not provided', async () => {
       await expect(statusAction('task-1', undefined)).rejects.toThrow('process.exit called');
 
-      expect(mockConsoleError).toHaveBeenCalledWith('Error: Status is required (open, in-progress, or closed)');
+      expect(mockConsoleError).toHaveBeenCalledWith('Error: Status is required (draft, open, in-progress, or closed)');
       expect(mockExit).toHaveBeenCalledWith(1);
       expect(mockChangeTaskStatus).not.toHaveBeenCalled();
     });

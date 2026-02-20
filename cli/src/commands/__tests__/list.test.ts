@@ -69,7 +69,7 @@ describe('list command', () => {
   it('should handle invalid status', async () => {
     await expect(listAction({ status: 'invalid' })).rejects.toThrow('process.exit called');
 
-    expect(mockConsoleError).toHaveBeenCalledWith('Invalid status. Must be one of: open, in-progress, closed');
+    expect(mockConsoleError).toHaveBeenCalledWith('Invalid status. Must be one of: draft, open, in-progress, closed');
     expect(mockExit).toHaveBeenCalledWith(1);
   });
 

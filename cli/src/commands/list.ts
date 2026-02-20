@@ -8,8 +8,8 @@ export async function listAction(options: any) {
     const filter: any = {};
 
     if (options.status) {
-      if (!["open", "in-progress", "closed"].includes(options.status)) {
-        console.error("Invalid status. Must be one of: open, in-progress, closed");
+      if (!["draft", "open", "in-progress", "closed"].includes(options.status)) {
+        console.error("Invalid status. Must be one of: draft, open, in-progress, closed");
         process.exit(1);
       }
       filter.status = options.status;
@@ -62,7 +62,7 @@ export async function listAction(options: any) {
 
 export const listCommand: any = new Command()
   .description("List tasks with optional filters.")
-  .option("-s, --status <status>", "Filter by status (open, in-progress, closed).")
+  .option("-s, --status <status>", "Filter by status (draft, open, in-progress, closed).")
   .option("-a, --assignee <assignee>", "Filter by assignee.")
   .option("-t, --task <taskId>", "Filter by task ID and include all subtasks (nested).")
   .option("--depends-on <taskId>", "Filter tasks that directly depend on the given task ID (not transitive).")
