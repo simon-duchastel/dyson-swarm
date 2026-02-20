@@ -271,7 +271,7 @@ Tasks can depend on other tasks. This is useful for modeling work that cannot st
 
 - Tasks can have zero or more dependencies
 - Dependencies are stored as an array of task IDs in the frontmatter
-- Circular dependencies are automatically prevented
+- Circular dependencies are automatically disallowed, ex. A->B, B->C, C->A is invalid.
 - Both main tasks and subtasks can have dependencies
 
 ```javascript
