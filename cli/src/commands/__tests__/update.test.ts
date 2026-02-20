@@ -136,11 +136,12 @@ describe('update command', () => {
       mockInputPrompt
         .mockResolvedValueOnce('New Title')
         .mockResolvedValueOnce('New desc')
-        .mockResolvedValueOnce('jane.doe');
+        .mockResolvedValueOnce('jane.doe')
+        .mockResolvedValueOnce('');
 
       await updateAction('task-1', {});
 
-      expect(mockInputPrompt).toHaveBeenCalledTimes(3);
+      expect(mockInputPrompt).toHaveBeenCalledTimes(4);
       expect(mockInputPrompt).toHaveBeenNthCalledWith(1, {
         message: 'New title (optional, press Enter to skip):',
       });
@@ -150,10 +151,14 @@ describe('update command', () => {
       expect(mockInputPrompt).toHaveBeenNthCalledWith(3, {
         message: 'New assignee (optional, press Enter to skip):',
       });
+      expect(mockInputPrompt).toHaveBeenNthCalledWith(4, {
+        message: 'New dependencies (comma-separated task IDs, optional, press Enter to skip):',
+      });
     });
 
     it('should skip update when all prompts return empty', async () => {
       mockInputPrompt
+        .mockResolvedValueOnce('')
         .mockResolvedValueOnce('')
         .mockResolvedValueOnce('')
         .mockResolvedValueOnce('');
@@ -174,6 +179,7 @@ describe('update command', () => {
       mockInputPrompt
         .mockResolvedValueOnce('Updated Title')
         .mockResolvedValueOnce('')
+        .mockResolvedValueOnce('')
         .mockResolvedValueOnce('');
 
       await updateAction('task-1', {});
@@ -190,16 +196,20 @@ describe('update command', () => {
       mockUpdateTask.mockResolvedValue(mockTask);
       mockInputPrompt
         .mockResolvedValueOnce('')
+        .mockResolvedValueOnce('')
         .mockResolvedValueOnce('');
 
       await updateAction('task-1', { title: 'Flag Title' });
 
-      expect(mockInputPrompt).toHaveBeenCalledTimes(2);
+      expect(mockInputPrompt).toHaveBeenCalledTimes(3);
       expect(mockInputPrompt).toHaveBeenNthCalledWith(1, {
         message: 'New description (optional, press Enter to skip):',
       });
       expect(mockInputPrompt).toHaveBeenNthCalledWith(2, {
         message: 'New assignee (optional, press Enter to skip):',
+      });
+      expect(mockInputPrompt).toHaveBeenNthCalledWith(3, {
+        message: 'New dependencies (comma-separated task IDs, optional, press Enter to skip):',
       });
       expect(mockUpdateTask).toHaveBeenCalledWith('task-1', { title: 'Flag Title' });
     });
@@ -213,7 +223,8 @@ describe('update command', () => {
       mockUpdateTask.mockResolvedValue(mockTask);
       mockInputPrompt
         .mockResolvedValueOnce('')
-        .mockResolvedValueOnce('Prompted Assignee');
+        .mockResolvedValueOnce('Prompted Assignee')
+        .mockResolvedValueOnce('');
 
       await updateAction('task-1', { title: 'Flag Title' });
 

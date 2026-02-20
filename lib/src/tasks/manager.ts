@@ -181,6 +181,7 @@ export class TaskManager {
           id: fullyQualifiedId,
           frontmatter: {
             title: options.title,
+            dependsOn: options.dependsOn,
           },
           description: options.description,
           status: 'open',
@@ -200,6 +201,7 @@ export class TaskManager {
           frontmatter: {
             title: options.title,
             assignee: options.assignee,
+            dependsOn: options.dependsOn,
           },
           description: options.description,
           status,
@@ -282,6 +284,10 @@ export class TaskManager {
         for (const taskId of taskIds) {
           const task = await this.loadTaskFromFile(taskId);
           if (task) {
+            // Apply dependsOn filter if specified
+            if (filter.dependsOn && !task.frontmatter.dependsOn?.includes(filter.dependsOn)) {
+              continue;
+            }
             tasks.push(task);
           }
         }
@@ -378,6 +384,13 @@ export class TaskManager {
       }
       if (options.assignee !== undefined) {
         task.frontmatter.assignee = options.assignee;
+      }
+      if (options.dependsOn !== undefined) {
+        if (options.dependsOn.length === 0) {
+          delete task.frontmatter.dependsOn;
+        } else {
+          task.frontmatter.dependsOn = options.dependsOn;
+        }
       }
 
       // Update status based on assignee (for main tasks only)
@@ -511,5 +524,105 @@ export class TaskManager {
    */
   async unassignTask(taskId: string): Promise<Task | null> {
     return this.updateTask(taskId, { assignee: undefined });
+  }
+
+  /**
+   * Get tasks that this task depends on
+   */
+  async getTaskDependencies(taskId: string): Promise<Task[]> {
+    return this.withLock(async () => {
+      const task = await this.loadTaskFromFile(taskId);
+      if (!task || !task.frontmatter.dependsOn) {
+        return [];
+      }
+
+      const dependencies: Task[] = [];
+      for (const depId of task.frontmatter.dependsOn) {
+        const depTask = await this.loadTaskFromFile(depId);
+        if (depTask) {
+          dependencies.push(depTask);
+        }
+      }
+      return dependencies;
+    });
+  }
+
+  /**
+   * Get tasks that depend on this task
+   */
+  async getDependentTasks(taskId: string): Promise<Task[]> {
+    return this.withLock(async () => {
+      const allTasks = await this.listTasks();
+      return allTasks.filter(task => task.frontmatter.dependsOn?.includes(taskId));
+    });
+  }
+
+  /**
+   * Add a dependency to a task
+   */
+  async addTaskDependency(taskId: string, dependencyId: string): Promise<Task | null> {
+    return this.withLock(async () => {
+      const task = await this.loadTaskFromFile(taskId);
+      if (!task) {
+        return null;
+      }
+
+      const currentDeps = task.frontmatter.dependsOn || [];
+      if (currentDeps.includes(dependencyId)) {
+        return task; // Already a dependency
+      }
+
+      // Check for circular dependency using DFS
+      // We need to check if adding taskId -> dependencyId would create a cycle
+      // by checking if dependencyId (or any of its transitive dependencies) depends on taskId
+      const visited = new Set<string>();
+      const stack = [dependencyId];
+      
+      while (stack.length > 0) {
+        const currentId = stack.pop()!;
+        
+        if (currentId === taskId) {
+          throw new Error(`Circular dependency: ${dependencyId} (or its dependencies) already depends on ${taskId}`);
+        }
+        
+        if (visited.has(currentId)) {
+          continue;
+        }
+        
+        visited.add(currentId);
+        
+        const currentTask = await this.loadTaskFromFile(currentId);
+        if (currentTask?.frontmatter.dependsOn) {
+          for (const dep of currentTask.frontmatter.dependsOn) {
+            if (!visited.has(dep)) {
+              stack.push(dep);
+            }
+          }
+        }
+      }
+
+      const newDeps = [...currentDeps, dependencyId];
+      return this.updateTask(taskId, { dependsOn: newDeps });
+    });
+  }
+
+  /**
+   * Remove a dependency from a task
+   */
+  async removeTaskDependency(taskId: string, dependencyId: string): Promise<Task | null> {
+    return this.withLock(async () => {
+      const task = await this.loadTaskFromFile(taskId);
+      if (!task) {
+        return null;
+      }
+
+      const currentDeps = task.frontmatter.dependsOn || [];
+      if (!currentDeps.includes(dependencyId)) {
+        return task; // Not a dependency
+      }
+
+      const newDeps = currentDeps.filter(id => id !== dependencyId);
+      return this.updateTask(taskId, { dependsOn: newDeps });
+    });
   }
 }

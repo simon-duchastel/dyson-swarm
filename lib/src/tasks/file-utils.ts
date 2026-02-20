@@ -31,15 +31,45 @@ export class TaskFileUtils {
     };
 
     const lines = frontmatterStr.split('\n');
-    for (const line of lines) {
+    let inDependsOn = false;
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
       const trimmedLine = line.trim();
       if (!trimmedLine || trimmedLine.startsWith('#')) continue;
+      
+      // Check for array items (lines starting with -)
+      if (trimmedLine.startsWith('- ')) {
+        if (inDependsOn) {
+          let value = trimmedLine.substring(2).trim();
+          // Remove quotes if present
+          if (value.startsWith('"') && value.endsWith('"')) {
+            value = value.slice(1, -1);
+          } else if (value.startsWith("'") && value.endsWith("'")) {
+            value = value.slice(1, -1);
+          }
+          if (!frontmatter.dependsOn) {
+            frontmatter.dependsOn = [];
+          }
+          frontmatter.dependsOn.push(value);
+        }
+        continue;
+      }
       
       const colonIndex = trimmedLine.indexOf(':');
       if (colonIndex === -1) continue;
       
       const key = trimmedLine.substring(0, colonIndex).trim();
       let value = trimmedLine.substring(colonIndex + 1).trim();
+      
+      // Check if this is the start of dependsOn array
+      if (key === 'dependsOn') {
+        inDependsOn = true;
+        frontmatter.dependsOn = [];
+        continue;
+      }
+      
+      inDependsOn = false;
       
       // Remove quotes if present
       if (value.startsWith('"') && value.endsWith('"')) {
@@ -70,6 +100,13 @@ export class TaskFileUtils {
     
     if (task.frontmatter.assignee) {
       frontmatter.push(`assignee: "${task.frontmatter.assignee}"`);
+    }
+
+    if (task.frontmatter.dependsOn && task.frontmatter.dependsOn.length > 0) {
+      frontmatter.push(`dependsOn:`);
+      for (const depId of task.frontmatter.dependsOn) {
+        frontmatter.push(`  - "${depId}"`);
+      }
     }
 
     const frontmatterStr = frontmatter.join('\n');

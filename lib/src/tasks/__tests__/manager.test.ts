@@ -287,7 +287,7 @@ describe('TaskManager', () => {
     mockFS.directories.add(`${testCwd}/.swarm`);
     mockFS.directories.add(`${testCwd}/.swarm/tasks`);
     mockFS.directories.add(`${testCwd}/.swarm/statuses`);
-    mockFS.files.set(`${testCwd}/.swarm/version`, '2');
+    mockFS.files.set(`${testCwd}/.swarm/version`, '3');
     mockFS.files.set(`${testCwd}/.swarm/lockfile`, '');
     mockFS.files.set(`${testCwd}/.swarm/statuses/draft`, '');
     mockFS.files.set(`${testCwd}/.swarm/statuses/open`, '');
@@ -821,6 +821,320 @@ describe('TaskManager', () => {
       expect(unassigned!.frontmatter.assignee).toBeUndefined();
     });
   });
+
+  describe('Task Dependencies', () => {
+    describe('createTask with dependencies', () => {
+      it('should create a task with dependencies', async () => {
+        const dep1 = await taskManager.createTask({
+          title: 'Dependency 1',
+          description: 'First dependency',
+        });
+
+        const dep2 = await taskManager.createTask({
+          title: 'Dependency 2',
+          description: 'Second dependency',
+        });
+
+        const task = await taskManager.createTask({
+          title: 'Main Task',
+          description: 'Task with dependencies',
+          dependsOn: [dep1.id, dep2.id],
+        });
+
+        expect(task.frontmatter.dependsOn).toEqual([dep1.id, dep2.id]);
+      });
+
+      it('should create a subtask with dependencies', async () => {
+        const parent = await taskManager.createTask({
+          title: 'Parent Task',
+          description: 'Parent',
+        });
+
+        const dep = await taskManager.createTask({
+          title: 'Dependency',
+          description: 'Task to depend on',
+        });
+
+        const subtask = await taskManager.createTask({
+          title: 'Subtask',
+          description: 'Subtask with dependencies',
+          parentTaskId: parent.id,
+          dependsOn: [dep.id],
+        });
+
+        expect(subtask.frontmatter.dependsOn).toEqual([dep.id]);
+      });
+    });
+
+    describe('updateTask with dependencies', () => {
+      it('should update task dependencies', async () => {
+        const dep1 = await taskManager.createTask({
+          title: 'Dependency 1',
+          description: 'First dependency',
+        });
+
+        const task = await taskManager.createTask({
+          title: 'Main Task',
+          description: 'Task without dependencies',
+        });
+
+        const updated = await taskManager.updateTask(task.id, {
+          dependsOn: [dep1.id],
+        });
+
+        expect(updated!.frontmatter.dependsOn).toEqual([dep1.id]);
+      });
+
+      it('should clear task dependencies when set to empty array', async () => {
+        const dep = await taskManager.createTask({
+          title: 'Dependency',
+          description: 'Task to depend on',
+        });
+
+        const task = await taskManager.createTask({
+          title: 'Main Task',
+          description: 'Task with dependency',
+          dependsOn: [dep.id],
+        });
+
+        const updated = await taskManager.updateTask(task.id, {
+          dependsOn: [],
+        });
+
+        expect(updated!.frontmatter.dependsOn).toBeUndefined();
+      });
+    });
+
+    describe('getTaskDependencies', () => {
+      it('should return dependencies for a task', async () => {
+        const dep1 = await taskManager.createTask({
+          title: 'Dependency 1',
+          description: 'First dependency',
+        });
+
+        const dep2 = await taskManager.createTask({
+          title: 'Dependency 2',
+          description: 'Second dependency',
+        });
+
+        const task = await taskManager.createTask({
+          title: 'Main Task',
+          description: 'Task with dependencies',
+          dependsOn: [dep1.id, dep2.id],
+        });
+
+        const dependencies = await taskManager.getTaskDependencies(task.id);
+
+        expect(dependencies).toHaveLength(2);
+        const depIds = dependencies.map(d => d.id);
+        expect(depIds).toContain(dep1.id);
+        expect(depIds).toContain(dep2.id);
+      });
+
+      it('should return empty array for task without dependencies', async () => {
+        const task = await taskManager.createTask({
+          title: 'Main Task',
+          description: 'Task without dependencies',
+        });
+
+        const dependencies = await taskManager.getTaskDependencies(task.id);
+
+        expect(dependencies).toHaveLength(0);
+      });
+    });
+
+    describe('getDependentTasks', () => {
+      it('should return tasks that depend on a given task', async () => {
+        const dep = await taskManager.createTask({
+          title: 'Dependency',
+          description: 'Task to depend on',
+        });
+
+        const task1 = await taskManager.createTask({
+          title: 'Task 1',
+          description: 'Depends on dep',
+          dependsOn: [dep.id],
+        });
+
+        const task2 = await taskManager.createTask({
+          title: 'Task 2',
+          description: 'Also depends on dep',
+          dependsOn: [dep.id],
+        });
+
+        const dependents = await taskManager.getDependentTasks(dep.id);
+
+        expect(dependents).toHaveLength(2);
+        const taskIds = dependents.map(t => t.id);
+        expect(taskIds).toContain(task1.id);
+        expect(taskIds).toContain(task2.id);
+      });
+
+      it('should return empty array when no tasks depend on the given task', async () => {
+        const task = await taskManager.createTask({
+          title: 'Task',
+          description: 'Standalone task',
+        });
+
+        const dependents = await taskManager.getDependentTasks(task.id);
+
+        expect(dependents).toHaveLength(0);
+      });
+    });
+
+    describe('addTaskDependency', () => {
+      it('should add a dependency to a task', async () => {
+        const dep = await taskManager.createTask({
+          title: 'Dependency',
+          description: 'Task to depend on',
+        });
+
+        const task = await taskManager.createTask({
+          title: 'Main Task',
+          description: 'Task without dependencies',
+        });
+
+        const updated = await taskManager.addTaskDependency(task.id, dep.id);
+
+        expect(updated!.frontmatter.dependsOn).toEqual([dep.id]);
+      });
+
+      it('should not add duplicate dependency', async () => {
+        const dep = await taskManager.createTask({
+          title: 'Dependency',
+          description: 'Task to depend on',
+        });
+
+        const task = await taskManager.createTask({
+          title: 'Main Task',
+          description: 'Task with dependency',
+          dependsOn: [dep.id],
+        });
+
+        const updated = await taskManager.addTaskDependency(task.id, dep.id);
+
+        expect(updated!.frontmatter.dependsOn).toEqual([dep.id]);
+      });
+
+      it('should prevent circular dependencies', async () => {
+        const task1 = await taskManager.createTask({
+          title: 'Task 1',
+          description: 'First task',
+          dependsOn: [],
+        });
+
+        const task2 = await taskManager.createTask({
+          title: 'Task 2',
+          description: 'Second task',
+          dependsOn: [task1.id],
+        });
+
+        // Try to make task1 depend on task2 (circular)
+        await expect(taskManager.addTaskDependency(task1.id, task2.id))
+          .rejects.toThrow('Circular dependency');
+      });
+
+      it('should prevent transitive circular dependencies (A->B->C->A)', async () => {
+        const taskA = await taskManager.createTask({
+          title: 'Task A',
+          description: 'Task A',
+          dependsOn: [],
+        });
+
+        const taskB = await taskManager.createTask({
+          title: 'Task B',
+          description: 'Task B',
+          dependsOn: [taskA.id],
+        });
+
+        const taskC = await taskManager.createTask({
+          title: 'Task C',
+          description: 'Task C',
+          dependsOn: [taskB.id],
+        });
+
+        // Try to make taskA depend on taskC (would create A->B->C->A cycle)
+        await expect(taskManager.addTaskDependency(taskA.id, taskC.id))
+          .rejects.toThrow('Circular dependency');
+      });
+
+      it('should return null for non-existent task', async () => {
+        const result = await taskManager.addTaskDependency('non-existent', 'also-non-existent');
+        expect(result).toBeNull();
+      });
+    });
+
+    describe('removeTaskDependency', () => {
+      it('should remove a dependency from a task', async () => {
+        const dep = await taskManager.createTask({
+          title: 'Dependency',
+          description: 'Task to depend on',
+        });
+
+        const task = await taskManager.createTask({
+          title: 'Main Task',
+          description: 'Task with dependency',
+          dependsOn: [dep.id],
+        });
+
+        const updated = await taskManager.removeTaskDependency(task.id, dep.id);
+
+        expect(updated!.frontmatter.dependsOn).toBeUndefined();
+      });
+
+      it('should return task unchanged when dependency not found', async () => {
+        const task = await taskManager.createTask({
+          title: 'Main Task',
+          description: 'Task without dependencies',
+        });
+
+        const updated = await taskManager.removeTaskDependency(task.id, 'non-existent-dep');
+
+        expect(updated!.frontmatter.dependsOn).toBeUndefined();
+      });
+
+      it('should return null for non-existent task', async () => {
+        const result = await taskManager.removeTaskDependency('non-existent', 'dep-id');
+        expect(result).toBeNull();
+      });
+    });
+
+    describe('listTasks with dependsOn filter', () => {
+      it('should filter tasks by dependency', async () => {
+        const dep = await taskManager.createTask({
+          title: 'Dependency',
+          description: 'Task to depend on',
+        });
+
+        const task1 = await taskManager.createTask({
+          title: 'Task 1',
+          description: 'Depends on dep',
+          dependsOn: [dep.id],
+        });
+
+        await taskManager.createTask({
+          title: 'Task 2',
+          description: 'Does not depend on dep',
+        });
+
+        const filtered = await taskManager.listTasks({ dependsOn: dep.id });
+
+        expect(filtered).toHaveLength(1);
+        expect(filtered[0].id).toBe(task1.id);
+      });
+
+      it('should return empty array when no tasks match dependency filter', async () => {
+        const dep = await taskManager.createTask({
+          title: 'Dependency',
+          description: 'Task to depend on',
+        });
+
+        const filtered = await taskManager.listTasks({ dependsOn: dep.id });
+
+        expect(filtered).toHaveLength(0);
+      });
+    });
+  });
 });
 
 describe('TaskFileUtils', () => {
@@ -856,6 +1170,34 @@ Simple task description.`;
       const content = 'No frontmatter here';
       
       expect(() => TaskFileUtils.parseTaskContent(content)).toThrow('Invalid task file format');
+    });
+
+    it('should parse task with dependsOn', () => {
+      const content = `---
+title: "Task with Dependencies"
+dependsOn:
+  - "dep-1"
+  - "dep-2"
+---
+Task description.`;
+
+      const result = TaskFileUtils.parseTaskContent(content);
+      
+      expect(result.frontmatter.title).toBe('Task with Dependencies');
+      expect(result.frontmatter.dependsOn).toEqual(['dep-1', 'dep-2']);
+      expect(result.description).toBe('Task description.');
+    });
+
+    it('should parse task without dependsOn', () => {
+      const content = `---
+title: "Simple Task"
+---
+Simple description.`;
+
+      const result = TaskFileUtils.parseTaskContent(content);
+      
+      expect(result.frontmatter.title).toBe('Simple Task');
+      expect(result.frontmatter.dependsOn).toBeUndefined();
     });
   });
 
@@ -893,6 +1235,43 @@ Simple task description.`;
       expect(taskString).toContain('title: "Simple Task"');
       expect(taskString).not.toContain('assignee:');
       expect(taskString).toContain('Simple description');
+    });
+
+    it('should include dependsOn in task string', () => {
+      const task = {
+        id: 'test-id',
+        frontmatter: {
+          title: 'Task with Dependencies',
+          dependsOn: ['dep-1', 'dep-2'],
+        },
+        description: 'Task description',
+        status: 'open' as TaskStatus,
+      };
+
+      const taskString = TaskFileUtils.taskToFileString(task);
+      
+      expect(taskString).toContain('title: "Task with Dependencies"');
+      expect(taskString).toContain('dependsOn:');
+      expect(taskString).toContain('- "dep-1"');
+      expect(taskString).toContain('- "dep-2"');
+      expect(taskString).toContain('Task description');
+    });
+
+    it('should not include dependsOn when empty', () => {
+      const task = {
+        id: 'test-id',
+        frontmatter: {
+          title: 'Simple Task',
+          dependsOn: [],
+        },
+        description: 'Task description',
+        status: 'open' as TaskStatus,
+      };
+
+      const taskString = TaskFileUtils.taskToFileString(task);
+      
+      expect(taskString).toContain('title: "Simple Task"');
+      expect(taskString).not.toContain('dependsOn:');
     });
   });
 

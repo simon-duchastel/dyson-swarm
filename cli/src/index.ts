@@ -16,6 +16,7 @@ import { assignCommand } from "./commands/assign.js";
 import { unassignCommand } from "./commands/unassign.js";
 import { deleteCommand } from "./commands/delete.js";
 import { initCommand } from "./commands/init.js";
+import { dependCommand, depsCommand } from "./commands/depend.js";
 
 await new Command()
   .help(flatHelp())
@@ -34,4 +35,6 @@ await new Command()
   .command("assign", assignCommand)
   .command("unassign", unassignCommand)
   .command("delete", deleteCommand)
+  .command("depend", dependCommand)
+  .command("deps", depsCommand)
   .parse();
