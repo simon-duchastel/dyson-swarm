@@ -1,8 +1,10 @@
-name: Build
+name: Build and Release
 
 on:
   push:
     branches: [main]
+    tags:
+      - "v*.*.*"
   pull_request:
     branches: [main]
 
@@ -39,5 +41,110 @@ jobs:
       - name: Build CLI
         run: bun run --filter dyson-swarm-cli build
 
-      - name: Build CLI binary
+      - name: Build CLI binary (Linux)
         run: bun run --filter dyson-swarm-cli build:binary
+
+  build-binaries:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-x64
+            artifact: swarm-linux-x64
+          - os: macos-latest
+            target: darwin-arm64
+            artifact: swarm-darwin-arm64
+          - os: windows-latest
+            target: windows-x64
+            artifact: swarm-windows-x64.exe
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: "1.3.9"
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build library
+        run: bun run --filter dyson-swarm build
+
+      - name: Build CLI binary
+        run: |
+          cd cli
+          bun build ./src/index.ts --compile --target bun-${{ matrix.target }} --outfile ${{ matrix.artifact }}
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: cli/${{ matrix.artifact }}
+
+  create-release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: swarm-*
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: artifacts/**/*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-npm:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: "1.3.9"
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build library
+        run: bun run --filter dyson-swarm build
+
+      - name: Build CLI
+        run: bun run --filter dyson-swarm-cli build
+
+      - name: Publish CLI to npm
+        run: |
+          cd cli
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish library to npm
+        run: |
+          cd lib
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
