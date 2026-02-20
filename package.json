@@ -8,14 +8,14 @@
     "cli"
   ],
   "scripts": {
-    "build": "bun run --filter=lib build && bun run --filter=cli build",
-    "build:lib": "bun run --filter=lib build",
-    "build:cli": "bun run --filter=cli build",
-    "test": "bun run --filter=lib test && bun run --filter=cli test",
-    "test:lib": "bun run --filter=lib test",
-    "test:cli": "bun run --filter=cli test",
-    "dev:lib": "bun run --filter=lib dev",
-    "dev:cli": "bun run --filter=cli dev"
+    "build": "bun run --filter dyson-swarm build && bun run --filter dyson-swarm-cli build",
+    "build:lib": "bun run --filter dyson-swarm build",
+    "build:cli": "bun run --filter dyson-swarm-cli build",
+    "test": "bun run --filter dyson-swarm test && bun run --filter dyson-swarm-cli test",
+    "test:lib": "bun run --filter dyson-swarm test",
+    "test:cli": "bun run --filter dyson-swarm-cli test",
+    "dev:lib": "bun run --filter dyson-swarm dev",
+    "dev:cli": "bun run --filter dyson-swarm-cli dev"
   },
   "keywords": [
     "issue-tracker",

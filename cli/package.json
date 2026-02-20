@@ -10,7 +10,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "bun build ./src/index.ts --outdir ./dist --target node",
     "typecheck": "tsc --noEmit",
     "dev": "bun src/index.ts",
     "test": "vitest --run",
@@ -36,7 +36,6 @@
     "@cliffy/table": "npm:@jsr/cliffy__table@1.0.0",
     "@types/node": "25.2.3",
     "cliffy-flat-help": "1.2.2",
-    "tsup": "8.5.1",
     "typescript": "5.9.3",
     "vitest": "4.0.18"
   }
