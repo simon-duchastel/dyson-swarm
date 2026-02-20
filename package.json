@@ -11,6 +11,7 @@
     "build": "bun run --filter dyson-swarm build && bun run --filter dyson-swarm-cli build",
     "build:lib": "bun run --filter dyson-swarm build",
     "build:cli": "bun run --filter dyson-swarm-cli build",
+    "build:binary": "bun run --filter dyson-swarm-cli build:binary",
     "test": "bun run --filter dyson-swarm test && bun run --filter dyson-swarm-cli test",
     "test:lib": "bun run --filter dyson-swarm test",
     "test:cli": "bun run --filter dyson-swarm-cli test",

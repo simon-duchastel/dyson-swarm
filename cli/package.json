@@ -11,6 +11,7 @@
   ],
   "scripts": {
     "build": "bun build ./src/index.ts --outdir ./dist --target bun",
+    "build:binary": "bun build ./src/index.ts --compile --outfile swarm",
     "typecheck": "tsc --noEmit",
     "dev": "bun src/index.ts",
     "test": "vitest --run",
