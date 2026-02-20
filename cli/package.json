@@ -12,7 +12,7 @@
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
-    "dev": "tsx src/index.ts",
+    "dev": "bun src/index.ts",
     "test": "vitest --run",
     "test:watch": "vitest --watch"
   },
@@ -37,7 +37,6 @@
     "@types/node": "25.2.3",
     "cliffy-flat-help": "1.2.2",
     "tsup": "8.5.1",
-    "tsx": "4.21.0",
     "typescript": "5.9.3",
     "vitest": "4.0.18"
   }

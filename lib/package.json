@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "dev": "tsx src/index.ts",
+    "dev": "bun src/index.ts",
     "test": "vitest --run",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage"
@@ -37,7 +37,6 @@
     "@types/node": "25.2.3",
     "@types/proper-lockfile": "4.1.4",
     "@types/uuid": "11.0.0",
-    "tsx": "4.21.0",
     "typescript": "5.9.3",
     "vitest": "4.0.18"
   }
