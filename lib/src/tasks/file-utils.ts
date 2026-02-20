@@ -200,7 +200,7 @@ export class TaskFileUtils {
       return subtaskIds;
     }
 
-    const statuses: Array<'open' | 'in-progress' | 'closed'> = ['open', 'in-progress', 'closed'];
+    const statuses: Array<'draft' | 'open' | 'in-progress' | 'closed'> = ['draft', 'open', 'in-progress', 'closed'];
     
     for (const status of statuses) {
       const statusDir = join(subtasksDir, status);

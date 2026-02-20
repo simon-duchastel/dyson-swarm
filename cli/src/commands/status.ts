@@ -5,17 +5,17 @@ export async function statusAction(taskId: string, status: string | undefined) {
   const taskManager = new TaskManager();
 
   if (!status) {
-    console.error("Error: Status is required (open, in-progress, or closed)");
+    console.error("Error: Status is required (draft, open, in-progress, or closed)");
     process.exit(1);
   }
 
-  if (!["open", "in-progress", "closed"].includes(status)) {
-    console.error("Invalid status. Must be one of: open, in-progress, closed");
+  if (!["draft", "open", "in-progress", "closed"].includes(status)) {
+    console.error("Invalid status. Must be one of: draft, open, in-progress, closed");
     process.exit(1);
   }
 
   try {
-    const task = await taskManager.changeTaskStatus(taskId, status as "open" | "in-progress" | "closed");
+    const task = await taskManager.changeTaskStatus(taskId, status as "draft" | "open" | "in-progress" | "closed");
 
     if (!task) {
       console.error(`Task not found: ${taskId}`);
@@ -38,5 +38,5 @@ export const statusCommand: any = new Command()
   .name("status")
   .description("Change the status of a task.")
   .argument("<taskId>", "The id of the task to update.")
-  .argument("[status]", "The new status (open, in-progress, or closed).")
+  .argument("[status]", "The new status (draft, open, in-progress, or closed).")
   .action(async (_options: any, taskId: string, status: string | undefined) => statusAction(taskId, status));
