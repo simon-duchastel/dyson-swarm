@@ -9,6 +9,10 @@ dist/
 build/
 *.tsbuildinfo
 
+# Compiled binaries
+cli/swarm
+*.exe
+
 # Runtime data
 pids
 *.pid

@@ -1,11 +1,10 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 import { Command } from "@cliffy/command";
 import { flatHelp } from "cliffy-flat-help";
-import { createRequire } from "node:module";
+import packageJson from "../package.json" with { type: "json" };
 
-const require = createRequire(import.meta.url);
-const { version } = require("../package.json");
+const { version } = packageJson;
 
 import { createCommand } from "./commands/create.js";
 import { listCommand } from "./commands/list.js";

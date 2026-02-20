@@ -15,7 +15,8 @@
     "resolveJsonModule": true,
     "paths": {
       "dyson-swarm": ["../lib/src/index.ts"]
-    }
+    },
+    "types": ["node"]
   },
   "include": [
     "src/**/*"

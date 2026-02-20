@@ -8,14 +8,15 @@
     "cli"
   ],
   "scripts": {
-    "build": "npm run build --workspace=lib && npm run build --workspace=cli",
-    "build:lib": "npm run build --workspace=lib",
-    "build:cli": "npm run build --workspace=cli",
-    "test": "npm run test --workspace=lib && npm run test --workspace=cli",
-    "test:lib": "npm run test --workspace=lib",
-    "test:cli": "npm run test --workspace=cli",
-    "dev:lib": "npm run dev --workspace=lib",
-    "dev:cli": "npm run dev --workspace=cli"
+    "build": "bun run --filter dyson-swarm build && bun run --filter dyson-swarm-cli build",
+    "build:lib": "bun run --filter dyson-swarm build",
+    "build:cli": "bun run --filter dyson-swarm-cli build",
+    "build:binary": "bun run --filter dyson-swarm-cli build:binary",
+    "test": "bun run --filter dyson-swarm test && bun run --filter dyson-swarm-cli test",
+    "test:lib": "bun run --filter dyson-swarm test",
+    "test:cli": "bun run --filter dyson-swarm-cli test",
+    "dev:lib": "bun run --filter dyson-swarm dev",
+    "dev:cli": "bun run --filter dyson-swarm-cli dev"
   },
   "keywords": [
     "issue-tracker",
@@ -27,13 +28,11 @@
   "author": "",
   "license": "MIT",
   "engines": {
-    "node": ">=24.0.0"
+    "bun": ">=1.0.0"
   },
   "devDependencies": {
     "@types/node": "25.2.3",
     "@types/proper-lockfile": "4.1.4",
-    "@types/uuid": "11.0.0",
-    "tsx": "4.21.0",
     "typescript": "5.9.3",
     "vitest": "4.0.18"
   },

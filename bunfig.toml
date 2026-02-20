@@ -1,0 +1,6 @@
+[install]
+# Allow JSR imports
+registry = "https://registry.npmjs.org/"
+
+[install.scopes]
+"@jsr" = { url = "https://npm.jsr.io/" }
