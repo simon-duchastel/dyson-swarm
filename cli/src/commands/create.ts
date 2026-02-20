@@ -16,17 +16,11 @@ export async function createAction(options: any) {
       minLength: 1,
     });
 
-    const assignee = options.assignee ?? await Input.prompt({
-      message: "Enter assignee (optional):",
-    });
+    const assignee = options.assignee;
 
-    const parent = options.parent ?? await Input.prompt({
-      message: "Enter parent task ID (optional):",
-    });
+    const parent = options.parent;
 
-    const dependsOnInput = options.dependsOn ?? await Input.prompt({
-      message: "Enter task IDs this task depends on (comma-separated, optional):",
-    });
+    const dependsOnInput = options.dependsOn;
 
     const dependsOn = dependsOnInput ? dependsOnInput.split(',').map((id: string) => id.trim()).filter(Boolean) : undefined;
 

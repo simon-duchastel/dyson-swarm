@@ -137,14 +137,11 @@ describe('create command', () => {
       mockCreateTask.mockResolvedValue(mockTask);
       mockInputPrompt
         .mockResolvedValueOnce('Prompted Title')
-        .mockResolvedValueOnce('Prompted Description')
-        .mockResolvedValueOnce('')
-        .mockResolvedValueOnce('')
-        .mockResolvedValueOnce('');
+        .mockResolvedValueOnce('Prompted Description');
 
       await createAction({});
 
-      expect(mockInputPrompt).toHaveBeenCalledTimes(5);
+      expect(mockInputPrompt).toHaveBeenCalledTimes(2);
       expect(mockInputPrompt).toHaveBeenNthCalledWith(1, {
         message: 'Enter task title:',
         minLength: 1,
@@ -152,15 +149,6 @@ describe('create command', () => {
       expect(mockInputPrompt).toHaveBeenNthCalledWith(2, {
         message: 'Enter task description:',
         minLength: 1,
-      });
-      expect(mockInputPrompt).toHaveBeenNthCalledWith(3, {
-        message: 'Enter assignee (optional):',
-      });
-      expect(mockInputPrompt).toHaveBeenNthCalledWith(4, {
-        message: 'Enter parent task ID (optional):',
-      });
-      expect(mockInputPrompt).toHaveBeenNthCalledWith(5, {
-        message: 'Enter task IDs this task depends on (comma-separated, optional):',
       });
       expect(mockCreateTask).toHaveBeenCalledWith({
         title: 'Prompted Title',
@@ -171,57 +159,7 @@ describe('create command', () => {
       });
     });
 
-    it('should prompt for assignee when not provided and use value', async () => {
-      const mockTask = {
-        id: 'test-task-id',
-        frontmatter: { title: 'Test Task', assignee: 'jane.doe' },
-        status: 'open',
-      };
-      mockCreateTask.mockResolvedValue(mockTask);
-      mockInputPrompt
-        .mockResolvedValueOnce('Test Task')
-        .mockResolvedValueOnce('Test Description')
-        .mockResolvedValueOnce('jane.doe')
-        .mockResolvedValueOnce('')
-        .mockResolvedValueOnce('');
-
-      await createAction({});
-
-      expect(mockCreateTask).toHaveBeenCalledWith({
-        title: 'Test Task',
-        description: 'Test Description',
-        assignee: 'jane.doe',
-        parentTaskId: undefined,
-        dependsOn: undefined,
-      });
-    });
-
-    it('should prompt for parent when not provided and use value', async () => {
-      const mockTask = {
-        id: 'parent-id/subtask-id',
-        frontmatter: { title: 'Subtask' },
-        status: 'open',
-      };
-      mockCreateTask.mockResolvedValue(mockTask);
-      mockInputPrompt
-        .mockResolvedValueOnce('Subtask')
-        .mockResolvedValueOnce('Test Description')
-        .mockResolvedValueOnce('')
-        .mockResolvedValueOnce('parent-id')
-        .mockResolvedValueOnce('');
-
-      await createAction({});
-
-      expect(mockCreateTask).toHaveBeenCalledWith({
-        title: 'Subtask',
-        description: 'Test Description',
-        assignee: undefined,
-        parentTaskId: 'parent-id',
-        dependsOn: undefined,
-      });
-    });
-
-    it('should use flag values for assignee and parent without prompting', async () => {
+    it('should use flag values for assignee and parent without prompting for optional fields', async () => {
       const mockTask = {
         id: 'test-task-id',
         frontmatter: { title: 'Test Task', assignee: 'flag-assignee' },
@@ -230,15 +168,14 @@ describe('create command', () => {
       mockCreateTask.mockResolvedValue(mockTask);
       mockInputPrompt
         .mockResolvedValueOnce('Test Task')
-        .mockResolvedValueOnce('Test Description')
-        .mockResolvedValueOnce('');
+        .mockResolvedValueOnce('Test Description');
 
       await createAction({
         assignee: 'flag-assignee',
         parent: 'flag-parent',
       });
 
-      expect(mockInputPrompt).toHaveBeenCalledTimes(3);
+      expect(mockInputPrompt).toHaveBeenCalledTimes(2);
       expect(mockCreateTask).toHaveBeenCalledWith({
         title: 'Test Task',
         description: 'Test Description',
@@ -251,28 +188,26 @@ describe('create command', () => {
     it('should mix flag and prompt values', async () => {
       const mockTask = {
         id: 'test-task-id',
-        frontmatter: { title: 'Flag Title', assignee: 'prompted-assignee' },
+        frontmatter: { title: 'Flag Title', assignee: 'flag-assignee' },
         status: 'open',
       };
       mockCreateTask.mockResolvedValue(mockTask);
       mockInputPrompt
-        .mockResolvedValueOnce('Prompted Description')
-        .mockResolvedValueOnce('prompted-assignee')
-        .mockResolvedValueOnce('')
-        .mockResolvedValueOnce('');
+        .mockResolvedValueOnce('Prompted Description');
 
       await createAction({
         title: 'Flag Title',
+        assignee: 'flag-assignee',
       });
 
-      expect(mockInputPrompt).toHaveBeenCalledTimes(4);
+      expect(mockInputPrompt).toHaveBeenCalledTimes(1);
       expect(mockInputPrompt).not.toHaveBeenCalledWith(
         expect.objectContaining({ message: 'Enter task title:' })
       );
       expect(mockCreateTask).toHaveBeenCalledWith({
         title: 'Flag Title',
         description: 'Prompted Description',
-        assignee: 'prompted-assignee',
+        assignee: 'flag-assignee',
         parentTaskId: undefined,
         dependsOn: undefined,
       });

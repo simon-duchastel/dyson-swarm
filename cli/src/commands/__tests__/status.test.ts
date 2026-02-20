@@ -15,19 +15,6 @@ vi.mock("dyson-swarm", function() {
   };
 });
 
-// Mock @cliffy/prompt
-vi.mock("@cliffy/prompt", function() {
-  return {
-    Select: {
-      prompt: vi.fn(),
-    },
-  };
-});
-
-// Import the mocked module to access it
-import { Select } from '@cliffy/prompt';
-const mockSelectPrompt = vi.mocked(Select.prompt);
-
 // Mock console
 const mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
 const mockConsoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -56,7 +43,6 @@ describe('status command', () => {
       expect(mockChangeTaskStatus).toHaveBeenCalledWith('task-1', 'closed');
       expect(mockConsoleLog).toHaveBeenCalledWith('Changed status of task task-1 to: closed');
       expect(mockConsoleLog).toHaveBeenCalledWith('Title: Test Task');
-      expect(mockSelectPrompt).not.toHaveBeenCalled();
     });
 
     it('should change status to in-progress', async () => {
@@ -111,43 +97,13 @@ describe('status command', () => {
     });
   });
 
-  describe('with interactive prompt', () => {
-    it('should prompt for status when not provided', async () => {
-      const mockTask = {
-        id: 'task-1',
-        frontmatter: { title: 'Test Task' },
-        status: 'in-progress',
-      };
-      mockChangeTaskStatus.mockResolvedValue(mockTask);
-      mockSelectPrompt.mockResolvedValue('in-progress');
+  describe('without status provided', () => {
+    it('should error when status is not provided', async () => {
+      await expect(statusAction('task-1', undefined)).rejects.toThrow('process.exit called');
 
-      await statusAction('task-1', undefined);
-
-      expect(mockSelectPrompt).toHaveBeenCalledWith({
-        message: 'Select new status:',
-        options: [
-          { value: 'open', name: 'Open' },
-          { value: 'in-progress', name: 'In Progress' },
-          { value: 'closed', name: 'Closed' },
-        ],
-      });
-      expect(mockChangeTaskStatus).toHaveBeenCalledWith('task-1', 'in-progress');
-    });
-
-    it('should use selected status from prompt', async () => {
-      const mockTask = {
-        id: 'task-1',
-        frontmatter: { title: 'Test Task' },
-        status: 'closed',
-      };
-      mockChangeTaskStatus.mockResolvedValue(mockTask);
-      mockSelectPrompt.mockResolvedValue('closed');
-
-      await statusAction('task-1', undefined);
-
-      expect(mockSelectPrompt).toHaveBeenCalled();
-      expect(mockChangeTaskStatus).toHaveBeenCalledWith('task-1', 'closed');
-      expect(mockConsoleLog).toHaveBeenCalledWith('Changed status of task task-1 to: closed');
+      expect(mockConsoleError).toHaveBeenCalledWith('Error: Status is required (open, in-progress, or closed)');
+      expect(mockExit).toHaveBeenCalledWith(1);
+      expect(mockChangeTaskStatus).not.toHaveBeenCalled();
     });
   });
 });
