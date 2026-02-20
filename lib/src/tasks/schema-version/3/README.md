@@ -41,6 +41,7 @@ Task description goes here...
 - Circular dependencies are prevented at the API level
 - Dependencies can be to both main tasks and subtasks
 - Dependencies are tracked via the `dependsOn` field in task frontmatter
+- Task IDs in dependencies must be fully qualified (e.g., `a/b/c` if `c` is a subtask of `b` which is a subtask of `a`)
 
 ## Status Files
 
