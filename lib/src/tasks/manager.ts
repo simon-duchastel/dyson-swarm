@@ -572,10 +572,33 @@ export class TaskManager {
         return task; // Already a dependency
       }
 
-      // Check for circular dependency
-      const depTask = await this.loadTaskFromFile(dependencyId);
-      if (depTask && depTask.frontmatter.dependsOn?.includes(taskId)) {
-        throw new Error(`Circular dependency: ${dependencyId} already depends on ${taskId}`);
+      // Check for circular dependency using DFS
+      // We need to check if adding taskId -> dependencyId would create a cycle
+      // by checking if dependencyId (or any of its transitive dependencies) depends on taskId
+      const visited = new Set<string>();
+      const stack = [dependencyId];
+      
+      while (stack.length > 0) {
+        const currentId = stack.pop()!;
+        
+        if (currentId === taskId) {
+          throw new Error(`Circular dependency: ${dependencyId} (or its dependencies) already depends on ${taskId}`);
+        }
+        
+        if (visited.has(currentId)) {
+          continue;
+        }
+        
+        visited.add(currentId);
+        
+        const currentTask = await this.loadTaskFromFile(currentId);
+        if (currentTask?.frontmatter.dependsOn) {
+          for (const dep of currentTask.frontmatter.dependsOn) {
+            if (!visited.has(dep)) {
+              stack.push(dep);
+            }
+          }
+        }
       }
 
       const newDeps = [...currentDeps, dependencyId];

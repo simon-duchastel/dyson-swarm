@@ -65,5 +65,5 @@ export const listCommand: any = new Command()
   .option("-s, --status <status>", "Filter by status (open, in-progress, closed).")
   .option("-a, --assignee <assignee>", "Filter by assignee.")
   .option("-t, --task <taskId>", "Filter by task ID and include all subtasks (nested).")
-  .option("--depends-on <taskId>", "Filter tasks that depend on the given task ID.")
+  .option("--depends-on <taskId>", "Filter tasks that directly depend on the given task ID (not transitive).")
   .action(listAction);

@@ -1034,6 +1034,30 @@ describe('TaskManager', () => {
           .rejects.toThrow('Circular dependency');
       });
 
+      it('should prevent transitive circular dependencies (A->B->C->A)', async () => {
+        const taskA = await taskManager.createTask({
+          title: 'Task A',
+          description: 'Task A',
+          dependsOn: [],
+        });
+
+        const taskB = await taskManager.createTask({
+          title: 'Task B',
+          description: 'Task B',
+          dependsOn: [taskA.id],
+        });
+
+        const taskC = await taskManager.createTask({
+          title: 'Task C',
+          description: 'Task C',
+          dependsOn: [taskB.id],
+        });
+
+        // Try to make taskA depend on taskC (would create A->B->C->A cycle)
+        await expect(taskManager.addTaskDependency(taskA.id, taskC.id))
+          .rejects.toThrow('Circular dependency');
+      });
+
       it('should return null for non-existent task', async () => {
         const result = await taskManager.addTaskDependency('non-existent', 'also-non-existent');
         expect(result).toBeNull();
