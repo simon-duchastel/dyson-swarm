@@ -35,6 +35,7 @@
     "@cliffy/flags": "npm:@jsr/cliffy__flags@1.0.0",
     "@cliffy/table": "npm:@jsr/cliffy__table@1.0.0",
     "@types/node": "25.2.3",
+    "@types/proper-lockfile": "4.1.4",
     "cliffy-flat-help": "1.2.2",
     "typescript": "5.9.3",
     "vitest": "4.0.18"

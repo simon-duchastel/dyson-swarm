@@ -10,7 +10,6 @@
       "devDependencies": {
         "@types/node": "25.2.3",
         "@types/proper-lockfile": "4.1.4",
-        "@types/uuid": "11.0.0",
         "typescript": "5.9.3",
         "vitest": "4.0.18",
       },
@@ -31,6 +30,7 @@
         "@cliffy/prompt": "npm:@jsr/cliffy__prompt@^1.0.0",
         "@cliffy/table": "npm:@jsr/cliffy__table@1.0.0",
         "@types/node": "25.2.3",
+        "@types/proper-lockfile": "4.1.4",
         "cliffy-flat-help": "1.2.2",
         "typescript": "5.9.3",
         "vitest": "4.0.18",
@@ -46,7 +46,6 @@
       "devDependencies": {
         "@types/node": "25.2.3",
         "@types/proper-lockfile": "4.1.4",
-        "@types/uuid": "11.0.0",
         "typescript": "5.9.3",
         "vitest": "4.0.18",
       },
@@ -210,8 +209,6 @@
     "@types/proper-lockfile": ["@types/proper-lockfile@4.1.4", "", { "dependencies": { "@types/retry": "*" } }, "sha512-uo2ABllncSqg9F1D4nugVl9v93RmjxF6LJzQLMLDdPaXCUIDPeOJ21Gbqi43xNKzBi/WQ0Q0dICqufzQbMjipQ=="],
 
     "@types/retry": ["@types/retry@0.12.5", "", {}, "sha512-3xSjTp3v03X/lSQLkczaN9UIEwJMoMCA1+Nb5HfbJEQWogdeQIyVtTvxPXDQjZ5zws8rFQfVfRdz03ARihPJgw=="],
-
-    "@types/uuid": ["@types/uuid@11.0.0", "", { "dependencies": { "uuid": "*" } }, "sha512-HVyk8nj2m+jcFRNazzqyVKiZezyhDKrGUA3jlEcg/nZ6Ms+qHwocba1Y/AaVaznJTAM9xpdFSh+ptbNrhOGvZA=="],
 
     "@vitest/expect": ["@vitest/expect@4.0.18", "", { "dependencies": { "@standard-schema/spec": "^1.0.0", "@types/chai": "^5.2.2", "@vitest/spy": "4.0.18", "@vitest/utils": "4.0.18", "chai": "^6.2.1", "tinyrainbow": "^3.0.3" } }, "sha512-8sCWUyckXXYvx4opfzVY03EOiYVxyNrHS5QxX3DAIi5dpJAAkyJezHCP77VMX4HKA2LDT/Jpfo8i2r5BE3GnQQ=="],
 
