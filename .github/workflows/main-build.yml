@@ -1,9 +1,7 @@
-name: Build and Test
+name: Build and Release
 
 on:
   push:
-    branches: [main]
-  pull_request:
     branches: [main]
 
 jobs:
@@ -42,10 +40,9 @@ jobs:
       - name: Build CLI binary (Linux)
         run: bun run --filter dyson-swarm-cli build:binary
 
-  release:
+  check-release:
     needs: build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     outputs:
       is_release: ${{ steps.check.outputs.is_release }}
       version: ${{ steps.check.outputs.version }}
@@ -69,9 +66,9 @@ jobs:
           fi
 
   publish-npm:
-    needs: release
+    needs: check-release
     runs-on: ubuntu-latest
-    if: needs.release.outputs.is_release == 'true'
+    if: needs.check-release.outputs.is_release == 'true'
     permissions:
       contents: read
       id-token: write
@@ -108,9 +105,9 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   build-binaries:
-    needs: release
+    needs: check-release
     runs-on: ${{ matrix.os }}
-    if: needs.release.outputs.is_release == 'true'
+    if: needs.check-release.outputs.is_release == 'true'
     strategy:
       matrix:
         include:
@@ -152,7 +149,7 @@ jobs:
   create-release:
     needs: [build-binaries, publish-npm]
     runs-on: ubuntu-latest
-    if: needs.release.outputs.is_release == 'true'
+    if: needs.check-release.outputs.is_release == 'true'
     permissions:
       contents: write
 
@@ -168,7 +165,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ needs.release.outputs.version }}
+          tag_name: v${{ needs.check-release.outputs.version }}
           files: artifacts/**/*
           generate_release_notes: true
         env:
