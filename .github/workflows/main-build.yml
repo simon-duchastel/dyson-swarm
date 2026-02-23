@@ -90,10 +90,29 @@ jobs:
       - name: Build CLI
         run: bun run --filter dyson-swarm-cli build
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Get OIDC token
+        id: oidc
+        run: |
+          TOKEN=$(curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            -d "{\"audience\":\"registry.npmjs.org\"}" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -r '.value')
+          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+
       - name: Publish library to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ steps.oidc.outputs.token }}
         run: npm publish --workspace=lib --access public --provenance
 
       - name: Publish CLI to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ steps.oidc.outputs.token }}
         run: npm publish --workspace=cli --access public --provenance
 
   build-binaries:
