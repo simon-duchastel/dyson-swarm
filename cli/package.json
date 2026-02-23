@@ -1,6 +1,6 @@
 {
   "name": "dyson-swarm-cli",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "CLI for the dyson-swarm issue tracking system",
   "type": "module",
   "bin": {
@@ -30,7 +30,7 @@
     "bun": ">=1.3.0"
   },
   "dependencies": {
-    "dyson-swarm": "1.4.2"
+    "dyson-swarm": "1.4.3"
   },
   "devDependencies": {
     "@cliffy/ansi": "npm:@jsr/cliffy__ansi@1.0.0",
