@@ -90,6 +90,14 @@ jobs:
       - name: Build CLI
         run: bun run --filter dyson-swarm-cli build
 
+      - name: Configure npm with OIDC token
+        run: |
+          npm config set //registry.npmjs.org/:_authToken="$(curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            -d "{\"audience\":\"registry.npmjs.org\"}" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL" | jq -r '.value')"
+
       - name: Publish library to npm
         run: npm publish --workspace=lib --access public --provenance
 
