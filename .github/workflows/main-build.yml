@@ -71,7 +71,7 @@ jobs:
     if: needs.check-release.outputs.is_release == 'true'
     permissions:
       contents: read
-      id-token: write
+      id-token: write # Required for OIDC
 
     steps:
       - uses: actions/checkout@v4
@@ -94,15 +94,11 @@ jobs:
         run: |
           cd cli
           npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish library to npm
         run: |
           cd lib
           npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   build-binaries:
     needs: check-release
