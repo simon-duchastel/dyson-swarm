@@ -26,6 +26,12 @@
   ],
   "author": "",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/simon-duchastel/dyson-swarm.git",
+    "directory": "cli"
+  },
+  "homepage": "https://github.com/simon-duchastel/dyson-swarm#readme",
   "engines": {
     "bun": ">=1.3.0"
   },

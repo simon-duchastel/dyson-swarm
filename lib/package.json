@@ -29,6 +29,12 @@
   ],
   "author": "",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/simon-duchastel/dyson-swarm.git",
+    "directory": "lib"
+  },
+  "homepage": "https://github.com/simon-duchastel/dyson-swarm#readme",
   "dependencies": {
     "proper-lockfile": "4.1.2",
     "uuid": "13.0.0"
