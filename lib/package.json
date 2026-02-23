@@ -1,6 +1,6 @@
 {
   "name": "dyson-swarm",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "description": "A markdown-based issue tracking system library",
   "type": "module",
   "main": "dist/index.js",
