@@ -90,15 +90,11 @@ jobs:
       - name: Build CLI
         run: bun run --filter dyson-swarm-cli build
 
-      - name: Publish CLI to npm
-        run: |
-          cd cli
-          npm publish --access public --provenance
-
       - name: Publish library to npm
-        run: |
-          cd lib
-          npm publish --access public --provenance
+        run: npm publish --workspace=lib --access public --provenance
+
+      - name: Publish CLI to npm
+        run: npm publish --workspace=cli --access public --provenance
 
   build-binaries:
     needs: check-release
