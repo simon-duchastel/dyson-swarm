@@ -1,6 +1,11 @@
-# Dyson Swarm
+<div align="center">
+  
+<h1>Dyson Swarm</h1>
+<p>A markdown-based issue tracking system that provides a simple, human-readable way to manage tasks and issues.</p>
 
-A markdown-based issue tracking system that provides a simple, human-readable way to manage tasks and issues.
+</div>
+
+![Satellites in space](assets/images/satellites-header.avif)
 
 ## Installation
 
