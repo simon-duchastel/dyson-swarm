@@ -1,6 +1,6 @@
 {
   "name": "dyson-swarm-monorepo",
-  "version": "1.4.5",
+  "version": "1.4.6",
   "description": "Monorepo for dyson-swarm issue tracking system",
   "private": true,
   "workspaces": [
