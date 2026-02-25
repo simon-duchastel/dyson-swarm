@@ -37,3 +37,17 @@ export interface TaskFilter {
 export interface TaskManagerOptions {
   cwdProvider?: () => string;
 }
+
+/**
+ * Error thrown when trying to move a task to in-progress or done
+ * but its dependencies are not complete
+ */
+export class DependencyNotCompleteError extends Error {
+  constructor(
+    message: string = 'Cannot move task: dependencies are not complete',
+    public incompleteDependencies: Array<{ id: string; title: string; status: string }> = []
+  ) {
+    super(message);
+    this.name = 'DependencyNotCompleteError';
+  }
+}

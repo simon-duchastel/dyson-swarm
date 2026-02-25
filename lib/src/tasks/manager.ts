@@ -3,6 +3,7 @@ import { promises as fs, watchFile, unwatchFile, Stats } from 'fs';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import type { Task, TaskStatus, CreateTaskOptions, UpdateTaskOptions, TaskFilter, TaskManagerOptions } from './types.js';
+import { DependencyNotCompleteError } from './types.js';
 import { TaskFileUtils } from './file-utils.js';
 import { StatusUtils } from './status-utils.js';
 import { ensureSchemaVersion } from './schema-version/index.js';
@@ -405,8 +406,18 @@ export class TaskManager {
         }
       }
 
-      // If status changed, update status file
+      // If status changed, check dependencies and update status file
       if (newStatus !== currentStatus) {
+        // Check if trying to move to in-progress (via assignee)
+        if (newStatus === 'in-progress' && !isSubtask) {
+          const incompleteDeps = await this.getIncompleteDependencies(taskId);
+          if (incompleteDeps.length > 0) {
+            throw new DependencyNotCompleteError(
+              `Cannot move task to ${newStatus}: ${incompleteDeps.length} dependent task(s) are not done`,
+              incompleteDeps
+            );
+          }
+        }
         await StatusUtils.moveTaskStatus(taskId, currentStatus, newStatus, this.cwdProvider);
         task.status = newStatus;
       }
@@ -422,6 +433,32 @@ export class TaskManager {
 
       return task;
     });
+  }
+
+  /**
+   * Check if all dependencies of a task are complete (closed)
+   * Returns an array of incomplete dependencies
+   */
+  private async getIncompleteDependencies(taskId: string): Promise<Array<{ id: string; title: string; status: string }>> {
+    const task = await this.loadTaskFromFile(taskId);
+    if (!task || !task.frontmatter.dependsOn) {
+      return [];
+    }
+
+    const incompleteDependencies: Array<{ id: string; title: string; status: string }> = [];
+    
+    for (const depId of task.frontmatter.dependsOn) {
+      const depTask = await this.loadTaskFromFile(depId);
+      if (depTask && depTask.status !== 'closed') {
+        incompleteDependencies.push({
+          id: depTask.id,
+          title: depTask.frontmatter.title,
+          status: depTask.status,
+        });
+      }
+    }
+    
+    return incompleteDependencies;
   }
 
   /**
@@ -443,6 +480,22 @@ export class TaskManager {
       
       const currentStatus = task.status;
       if (currentStatus === newStatus) return task;
+
+      // Check if trying to move to in-progress or closed
+      if (newStatus === 'in-progress' || newStatus === 'closed') {
+        // For subtasks, check dependencies on the parent task
+        if (isSubtask) {
+          // Subtasks don't have dependencies field, so skip check
+        } else {
+          const incompleteDeps = await this.getIncompleteDependencies(taskId);
+          if (incompleteDeps.length > 0) {
+            throw new DependencyNotCompleteError(
+              `Cannot move task to ${newStatus}: ${incompleteDeps.length} dependent task(s) are not done`,
+              incompleteDeps
+            );
+          }
+        }
+      }
 
       // Update status file
       await StatusUtils.moveTaskStatus(taskId, currentStatus, newStatus, this.cwdProvider);

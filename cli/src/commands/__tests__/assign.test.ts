@@ -7,6 +7,12 @@ const mockAssignTask = vi.fn();
 vi.mock("dyson-swarm", function() {
   return {
     NotInitializedError: class NotInitializedError extends Error {},
+    DependencyNotCompleteError: class DependencyNotCompleteError extends Error {
+      constructor(message: string, public incompleteDependencies: Array<{ id: string; title: string; status: string }> = []) {
+        super(message);
+        this.name = 'DependencyNotCompleteError';
+      }
+    },
     TaskManager: vi.fn().mockImplementation(function() {
       return {
         assignTask: mockAssignTask,

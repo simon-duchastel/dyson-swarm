@@ -1,5 +1,5 @@
 import { Command } from "@cliffy/command";
-import { TaskManager, NotInitializedError } from "dyson-swarm";
+import { TaskManager, NotInitializedError, DependencyNotCompleteError } from "dyson-swarm";
 
 export async function assignAction(taskId: string, assignee: string | undefined) {
   const taskManager = new TaskManager();
@@ -23,6 +23,14 @@ export async function assignAction(taskId: string, assignee: string | undefined)
   } catch (error) {
     if (error instanceof NotInitializedError) {
       console.error("Error:", error.message);
+      process.exit(1);
+    }
+    if (error instanceof DependencyNotCompleteError) {
+      console.error("Error:", error.message);
+      console.error("\nThe following tasks must be completed first:");
+      for (const dep of error.incompleteDependencies) {
+        console.error(`  - ${dep.id}: ${dep.title} (${dep.status})`);
+      }
       process.exit(1);
     }
     console.error("Failed to assign task:", error instanceof Error ? error.message : error);

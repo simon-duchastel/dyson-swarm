@@ -7,6 +7,12 @@ const mockChangeTaskStatus = vi.fn();
 vi.mock("dyson-swarm", function() {
   return {
     NotInitializedError: class NotInitializedError extends Error {},
+    DependencyNotCompleteError: class DependencyNotCompleteError extends Error {
+      constructor(message: string, public incompleteDependencies: Array<{ id: string; title: string; status: string }> = []) {
+        super(message);
+        this.name = 'DependencyNotCompleteError';
+      }
+    },
     TaskManager: vi.fn().mockImplementation(function() {
       return {
         changeTaskStatus: mockChangeTaskStatus,
@@ -93,6 +99,25 @@ describe('status command', () => {
       await expect(statusAction('task-1', 'closed')).rejects.toThrow('process.exit called');
 
       expect(mockConsoleError).toHaveBeenCalledWith('Failed to change task status:', 'Database error');
+      expect(mockExit).toHaveBeenCalledWith(1);
+    });
+
+    it('should handle incomplete dependencies', async () => {
+      const { DependencyNotCompleteError } = await import('dyson-swarm');
+      const incompleteDeps = [
+        { id: 'dep-1', title: 'Dependency 1', status: 'open' },
+        { id: 'dep-2', title: 'Dependency 2', status: 'in-progress' },
+      ];
+      mockChangeTaskStatus.mockRejectedValue(
+        new DependencyNotCompleteError('Cannot move task: 2 dependent task(s) are not done', incompleteDeps)
+      );
+
+      await expect(statusAction('task-1', 'in-progress')).rejects.toThrow('process.exit called');
+
+      expect(mockConsoleError).toHaveBeenCalledWith('Error:', 'Cannot move task: 2 dependent task(s) are not done');
+      expect(mockConsoleError).toHaveBeenCalledWith('\nThe following tasks must be completed first:');
+      expect(mockConsoleError).toHaveBeenCalledWith('  - dep-1: Dependency 1 (open)');
+      expect(mockConsoleError).toHaveBeenCalledWith('  - dep-2: Dependency 2 (in-progress)');
       expect(mockExit).toHaveBeenCalledWith(1);
     });
   });
