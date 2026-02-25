@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { TaskManager } from '../manager.js';
 import { TaskFileUtils } from '../file-utils.js';
 import { StatusUtils } from '../status-utils.js';
-import { TaskStatus } from '../types.js';
+import { TaskStatus, DependencyNotCompleteError } from '../types.js';
 
 // Mock filesystem
 interface MockFileSystem {
@@ -1132,6 +1132,150 @@ describe('TaskManager', () => {
         const filtered = await taskManager.listTasks({ dependsOn: dep.id });
 
         expect(filtered).toHaveLength(0);
+      });
+    });
+
+    describe('changeTaskStatus with incomplete dependencies', () => {
+      it('should throw DependencyNotCompleteError when moving to in-progress with incomplete dependencies', async () => {
+        const dep1 = await taskManager.createTask({
+          title: 'Dependency 1',
+          description: 'Incomplete dependency',
+        });
+
+        const dep2 = await taskManager.createTask({
+          title: 'Dependency 2',
+          description: 'Another incomplete dependency',
+        });
+
+        const task = await taskManager.createTask({
+          title: 'Main Task',
+          description: 'Task with dependencies',
+          dependsOn: [dep1.id, dep2.id],
+        });
+
+        await expect(taskManager.changeTaskStatus(task.id, 'in-progress'))
+          .rejects.toThrow('Cannot move task to in-progress');
+
+        try {
+          await taskManager.changeTaskStatus(task.id, 'in-progress');
+        } catch (error: any) {
+          expect(error.name).toBe('DependencyNotCompleteError');
+          expect(error.incompleteDependencies).toHaveLength(2);
+          expect(error.incompleteDependencies[0].id).toBe(dep1.id);
+          expect(error.incompleteDependencies[0].status).toBe('open');
+          expect(error.incompleteDependencies[1].id).toBe(dep2.id);
+          expect(error.incompleteDependencies[1].status).toBe('open');
+        }
+      });
+
+      it('should throw DependencyNotCompleteError when moving to closed with incomplete dependencies', async () => {
+        const dep = await taskManager.createTask({
+          title: 'Dependency',
+          description: 'Incomplete dependency',
+        });
+
+        const task = await taskManager.createTask({
+          title: 'Main Task',
+          description: 'Task with dependency',
+          dependsOn: [dep.id],
+        });
+
+        await expect(taskManager.changeTaskStatus(task.id, 'closed'))
+          .rejects.toThrow('Cannot move task to closed');
+      });
+
+      it('should allow moving to in-progress when all dependencies are closed', async () => {
+        const dep = await taskManager.createTask({
+          title: 'Dependency',
+          description: 'Complete dependency',
+        });
+
+        await taskManager.changeTaskStatus(dep.id, 'closed');
+
+        const task = await taskManager.createTask({
+          title: 'Main Task',
+          description: 'Task with dependency',
+          dependsOn: [dep.id],
+        });
+
+        const updated = await taskManager.changeTaskStatus(task.id, 'in-progress');
+        expect(updated!.status).toBe('in-progress');
+      });
+
+      it('should allow moving to closed when all dependencies are closed', async () => {
+        const dep = await taskManager.createTask({
+          title: 'Dependency',
+          description: 'Complete dependency',
+        });
+
+        await taskManager.changeTaskStatus(dep.id, 'closed');
+
+        const task = await taskManager.createTask({
+          title: 'Main Task',
+          description: 'Task with dependency',
+          dependsOn: [dep.id],
+        });
+
+        const updated = await taskManager.changeTaskStatus(task.id, 'closed');
+        expect(updated!.status).toBe('closed');
+      });
+
+      it('should allow moving to draft or open regardless of dependencies', async () => {
+        const dep = await taskManager.createTask({
+          title: 'Dependency',
+          description: 'Incomplete dependency',
+        });
+
+        const task = await taskManager.createTask({
+          title: 'Main Task',
+          description: 'Task with dependency',
+          dependsOn: [dep.id],
+        });
+
+        // Should be able to move to draft
+        let updated = await taskManager.changeTaskStatus(task.id, 'draft');
+        expect(updated!.status).toBe('draft');
+
+        // Should be able to move back to open
+        updated = await taskManager.changeTaskStatus(task.id, 'open');
+        expect(updated!.status).toBe('open');
+      });
+    });
+
+    describe('updateTask with incomplete dependencies', () => {
+      it('should throw DependencyNotCompleteError when assigning task with incomplete dependencies', async () => {
+        const dep = await taskManager.createTask({
+          title: 'Dependency',
+          description: 'Incomplete dependency',
+        });
+
+        const task = await taskManager.createTask({
+          title: 'Main Task',
+          description: 'Task with dependency',
+          dependsOn: [dep.id],
+        });
+
+        await expect(taskManager.updateTask(task.id, { assignee: 'john.doe' }))
+          .rejects.toThrow('Cannot move task to in-progress');
+      });
+
+      it('should allow assigning when all dependencies are closed', async () => {
+        const dep = await taskManager.createTask({
+          title: 'Dependency',
+          description: 'Complete dependency',
+        });
+
+        await taskManager.changeTaskStatus(dep.id, 'closed');
+
+        const task = await taskManager.createTask({
+          title: 'Main Task',
+          description: 'Task with dependency',
+          dependsOn: [dep.id],
+        });
+
+        const updated = await taskManager.updateTask(task.id, { assignee: 'john.doe' });
+        expect(updated!.status).toBe('in-progress');
+        expect(updated!.frontmatter.assignee).toBe('john.doe');
       });
     });
   });
