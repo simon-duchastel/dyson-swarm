@@ -1,7 +1,7 @@
 import lock from 'proper-lockfile';
 import { promises as fs, watchFile, unwatchFile, Stats } from 'fs';
 import { join } from 'path';
-import { v4 as uuidv4 } from 'uuid';
+import { randomBytes } from 'crypto';
 import type { Task, TaskStatus, CreateTaskOptions, UpdateTaskOptions, TaskFilter, TaskManagerOptions } from './types.js';
 import { DependencyNotCompleteError } from './types.js';
 import { TaskFileUtils } from './file-utils.js';
@@ -18,6 +18,34 @@ import {
   getSubtaskFile,
   getStatusesDir,
 } from '../paths.js';
+
+/**
+ * Generate a lexicographically ordered opaque task ID
+ * Format: YYYYMMDDHHMMSSmmm + 15 random alphanumeric characters
+ * Example: 202402262254329999abetffuiertdqwb
+ */
+function generateTaskId(): string {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(now.getUTCDate()).padStart(2, '0');
+  const hours = String(now.getUTCHours()).padStart(2, '0');
+  const minutes = String(now.getUTCMinutes()).padStart(2, '0');
+  const seconds = String(now.getUTCSeconds()).padStart(2, '0');
+  const milliseconds = String(now.getUTCMilliseconds()).padStart(3, '0');
+  
+  const timestamp = `${year}${month}${day}${hours}${minutes}${seconds}${milliseconds}`;
+  
+  // Generate 15 random alphanumeric characters
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let random = '';
+  const bytes = randomBytes(15);
+  for (let i = 0; i < 15; i++) {
+    random += chars[bytes[i] % chars.length];
+  }
+  
+  return `${timestamp}${random}`;
+}
 
 export class TaskManager {
   private cwdProvider: () => string;
@@ -170,7 +198,7 @@ export class TaskManager {
    */
   async createTask(options: CreateTaskOptions): Promise<Task> {
     return this.withLock(async () => {
-      const taskId = uuidv4();
+      const taskId = generateTaskId();
       const status: TaskStatus = options.assignee ? 'in-progress' : 'open';
       
       let fullyQualifiedId: string;
