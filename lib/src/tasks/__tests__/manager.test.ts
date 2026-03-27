@@ -29,6 +29,10 @@ const mockUUIDs = [
 // Track file watchers for testing
 const fileWatchers = new Map<string, Set<(curr: { mtime: Date }, prev: { mtime: Date }) => void>>();
 
+// Track directory watchers for testing
+const dirWatchers = new Map<string, ((event: string, filename: string) => void)[]>();
+const dirWatcherCloseFns: vi.Mock[] = [];
+
 // Mock fs module
 vi.mock('fs', () => ({
   promises: {
@@ -180,6 +184,22 @@ vi.mock('fs', () => ({
     if (watchers) {
       watchers.delete(listener);
     }
+  }),
+  watch: vi.fn((path: string, options: { recursive?: boolean } | string, listener?: (event: string, filename: string) => void) => {
+    const pathStr = path.toString();
+    const listeners = dirWatchers.get(pathStr) || [];
+    if (listener) {
+      listeners.push(listener);
+    }
+    dirWatchers.set(pathStr, listeners);
+    
+    const closeFn = vi.fn();
+    dirWatcherCloseFns.push(closeFn);
+    
+    return {
+      close: closeFn,
+      on: vi.fn()
+    };
   })
 }));
 
@@ -276,6 +296,8 @@ describe('TaskManager', () => {
     mockFS.directories.clear();
     mockFS.stats.clear();
     fileWatchers.clear();
+    dirWatchers.clear();
+    dirWatcherCloseFns.length = 0;
     mockUUIDCounter = 1;
     
     // Clear all vi.fn mocks
@@ -635,6 +657,8 @@ describe('TaskManager', () => {
       // Clean up
       await stream.return?.();
     });
+
+
   });
 
   describe('updateTask', () => {

@@ -1,5 +1,5 @@
 import lock from 'proper-lockfile';
-import { promises as fs, watchFile, unwatchFile, Stats } from 'fs';
+import { promises as fs, watch, watchFile, unwatchFile, Stats } from 'fs';
 import { join } from 'path';
 import { randomBytes } from 'crypto';
 import type { Task, TaskStatus, CreateTaskOptions, UpdateTaskOptions, TaskFilter, TaskManagerOptions } from './types.js';
@@ -327,12 +327,14 @@ export class TaskManager {
   }
 
   /**
-   * List tasks with streaming updates when status files change
+   * List tasks with streaming updates when tasks are added, deleted, or status changes
    * Returns an async generator that yields updated task lists
+   * Watches the entire .swarm directory to catch all changes including manual modifications
    */
   async *listTaskStream(filter: TaskFilter = {}): AsyncGenerator<Task[], void, unknown> {
     const statuses: TaskStatus[] = filter.status ? [filter.status] : ['draft', 'open', 'in-progress', 'closed'];
     const statusesDir = getStatusesDir(this.cwdProvider);
+    const tasksDir = getTasksDir(this.cwdProvider);
     const statusFiles = statuses.map(status => `${statusesDir}/${status}`);
     
     // Ensure all status files exist before watching
@@ -343,12 +345,17 @@ export class TaskManager {
       }
     }
     
+    // Ensure tasks directory exists
+    await TaskFileUtils.ensureDir(tasksDir);
+    
     // Initial load
     yield await this.listTasks(filter);
     
-    // Set up file watchers using fs.watchFile
-    const watchers = new Set<string>();
+    // Set up file watchers
+    const statusWatchers = new Set<string>();
     let changeResolve: (() => void) | null = null;
+    let dirWatcher: ReturnType<typeof watch> | null = null;
+    let debounceTimer: NodeJS.Timeout | null = null;
     
     const onFileChange = (curr: Stats, prev: Stats) => {
       if (curr.mtime !== prev.mtime && changeResolve) {
@@ -357,12 +364,29 @@ export class TaskManager {
       }
     };
     
+    const onDirChange = () => {
+      // Debounce directory changes to avoid triggering too many updates
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+      debounceTimer = setTimeout(() => {
+        if (changeResolve) {
+          changeResolve();
+          changeResolve = null;
+        }
+      }, 50);
+    };
+    
     try {
-      // Start watching all status files
+      // Start watching all status files for status changes
       for (const file of statusFiles) {
         watchFile(file, { interval: 100 }, onFileChange);
-        watchers.add(file);
+        statusWatchers.add(file);
       }
+      
+      // Watch the tasks directory for add/delete events
+      // This catches manual creation/deletion of task directories
+      dirWatcher = watch(tasksDir, { recursive: true }, onDirChange);
       
       while (true) {
         // Wait for any file change
@@ -375,8 +399,14 @@ export class TaskManager {
       }
     } finally {
       // Clean up all watchers
-      for (const file of watchers) {
+      for (const file of statusWatchers) {
         unwatchFile(file, onFileChange);
+      }
+      if (dirWatcher) {
+        dirWatcher.close();
+      }
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
       }
     }
   }
