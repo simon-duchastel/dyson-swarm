@@ -50,12 +50,23 @@ vi.mock('fs', () => ({
       const dirPath = pathStr.split('/').slice(0, -1).join('/');
       mockFS.directories.add(dirPath);
       
-      // Trigger watchers if file was modified
+      // Trigger file watchers if file was modified
       const watchers = fileWatchers.get(pathStr);
       if (watchers && hadFile) {
         const now = new Date();
         const prev = new Date(now.getTime() - 1000);
         watchers.forEach(cb => cb({ mtime: now }, { mtime: prev }));
+      }
+      
+      // Trigger directory watchers if this is a new file in the tasks directory
+      // This simulates fs.watch behavior for task creation
+      if (!hadFile && pathStr.includes('.swarm/tasks/')) {
+        const tasksDir = pathStr.split('.swarm/tasks/')[0] + '.swarm/tasks';
+        const dirListeners = dirWatchers.get(tasksDir);
+        if (dirListeners) {
+          const filename = pathStr.split('/').pop();
+          dirListeners.forEach(cb => cb('change', filename || ''));
+        }
       }
       
       return Promise.resolve();
@@ -150,16 +161,28 @@ vi.mock('fs', () => ({
       return Promise.resolve();
     }),
     rm: vi.fn((path: string) => {
+      const pathStr = path.toString();
+      
+      // Trigger directory watchers before deletion if it's a task directory
+      if (pathStr.includes('.swarm/tasks/')) {
+        const tasksDir = pathStr.split('.swarm/tasks/')[0] + '.swarm/tasks';
+        const dirListeners = dirWatchers.get(tasksDir);
+        if (dirListeners) {
+          const dirName = pathStr.split('/').pop();
+          dirListeners.forEach(cb => cb('rename', dirName || ''));
+        }
+      }
+      
       // Remove files
       for (const filePath of mockFS.files.keys()) {
-        if (filePath.startsWith(path.toString())) {
+        if (filePath.startsWith(pathStr)) {
           mockFS.files.delete(filePath);
         }
       }
       
       // Remove directories
       for (const dirPath of mockFS.directories) {
-        if (dirPath.startsWith(path.toString())) {
+        if (dirPath.startsWith(pathStr)) {
           mockFS.directories.delete(dirPath);
         }
       }
@@ -656,32 +679,6 @@ describe('TaskManager', () => {
       
       // Clean up
       await stream.return?.();
-    });
-
-    it('should have fs.watch mock available for directory monitoring', async () => {
-      // This test verifies that the fs.watch mock is properly set up
-      // and can be used to track directory watching
-      const fs = await import('fs');
-      
-      // Verify the mock exists and is a function
-      expect(fs.watch).toBeDefined();
-      expect(typeof fs.watch).toBe('function');
-      
-      // Test the mock behavior directly
-      const testPath = '/test/path';
-      const testListener = vi.fn();
-      const result = fs.watch(testPath, { recursive: true }, testListener);
-      
-      // Verify the mock returned the expected object structure
-      expect(result).toHaveProperty('close');
-      expect(result).toHaveProperty('on');
-      expect(typeof result.close).toBe('function');
-      
-      // Verify the directory was tracked
-      expect(dirWatchers.has(testPath)).toBe(true);
-      
-      // Clean up
-      result.close();
     });
   });
 
