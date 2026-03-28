@@ -658,7 +658,31 @@ describe('TaskManager', () => {
       await stream.return?.();
     });
 
-
+    it('should have fs.watch mock available for directory monitoring', async () => {
+      // This test verifies that the fs.watch mock is properly set up
+      // and can be used to track directory watching
+      const fs = await import('fs');
+      
+      // Verify the mock exists and is a function
+      expect(fs.watch).toBeDefined();
+      expect(typeof fs.watch).toBe('function');
+      
+      // Test the mock behavior directly
+      const testPath = '/test/path';
+      const testListener = vi.fn();
+      const result = fs.watch(testPath, { recursive: true }, testListener);
+      
+      // Verify the mock returned the expected object structure
+      expect(result).toHaveProperty('close');
+      expect(result).toHaveProperty('on');
+      expect(typeof result.close).toBe('function');
+      
+      // Verify the directory was tracked
+      expect(dirWatchers.has(testPath)).toBe(true);
+      
+      // Clean up
+      result.close();
+    });
   });
 
   describe('updateTask', () => {
